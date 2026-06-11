@@ -1,0 +1,127 @@
+{
+  "video_id": "pro_match19_1_01_01",
+  "title": "pro_match19_1_01_01",
+  "fps": 29.97,
+  "frame_count": 460,
+  "duration_s": 15.348682015348682,
+  "court_points_px": [
+    [
+      418.0,
+      424.0
+    ],
+    [
+      878.0,
+      424.0
+    ],
+    [
+      941.0,
+      710.0
+    ],
+    [
+      228.0,
+      708.0
+    ]
+  ],
+  "court_size_m": {
+    "width": 6.1,
+    "length": 13.4
+  },
+  "homography": [
+    [
+      0.07682869477402061,
+      0.0513994788981124,
+      -53.90777346834028
+    ],
+    [
+      1.0365744284233515e-17,
+      0.4215374367798898,
+      -178.73187319467323
+    ],
+    [
+      5.685835919583507e-05,
+      0.011188013512369676,
+      1.0
+    ]
+  ],
+  "players": {
+    "far": {
+      "current_speed_mps": 4.973657612801275,
+      "rally_distance_m": 37.37380458040335,
+      "rally_time_s": 14.547881214547953,
+      "rally_max_speed_mps": 9.325289171668329,
+      "rally_avg_speed_mps": 2.569020466226337,
+      "total_distance_m": 37.37380458040335,
+      "total_time_s": 14.547881214547953,
+      "total_max_speed_mps": 9.325289171668329,
+      "total_avg_speed_mps": 2.569020466226337
+    },
+    "near": {
+      "current_speed_mps": 0.8984409726996857,
+      "rally_distance_m": 43.74546419112362,
+      "rally_time_s": 14.948281614948371,
+      "rally_max_speed_mps": 8.898779105988135,
+      "rally_avg_speed_mps": 2.9264543790356403,
+      "total_distance_m": 43.74546419112362,
+      "total_time_s": 14.948281614948371,
+      "total_max_speed_mps": 8.898779105988135,
+      "total_avg_speed_mps": 2.9264543790356403
+    }
+  },
+  "analysis_meta": {
+    "video_id": "pro_match19_1_01_01",
+    "frames": 460,
+    "fps": 29.97,
+    "duration_s": 15.348682015348682,
+    "resolution": "1280x720",
+    "ball_visible_rate": 0.8130434782608695,
+    "ball_spatial_rate": 0.09782608695652174,
+    "ball_filter_applied": true,
+    "ball_quality_level": "Green",
+    "ball_quality_score": 98.51,
+    "ball_low_confidence": false,
+    "near_visible_rate": 1.0,
+    "far_visible_rate": 0.9608695652173913,
+    "detection_gaps": 3,
+    "near_distance_m": 43.74546419112362,
+    "far_distance_m": 37.37380458040335,
+    "max_speed_mps": 9.325289171668329
+  },
+  "original_video_meta": {
+    "file_name": "pro_match19_1_01_01.mp4",
+    "path": "/Users/davidfang/PyCharmMiscProject/minicondapythonProject1/计算机视觉大作业/inputs/pro_match19_1_01_01.mp4",
+    "size_bytes": 7736983,
+    "width": 1280,
+    "height": 720,
+    "fps": 29.97,
+    "frame_count": 460,
+    "duration_s": 15.348682015348682,
+    "resolution": "1280x720"
+  },
+  "uploaded_video_meta": {
+    "file_name": "前端可视化.mp4",
+    "path": "/Users/davidfang/Desktop/lida/计算机视觉/前端可视化.mp4",
+    "size_bytes": 5699268,
+    "width": 960,
+    "height": 544,
+    "fps": 25.0,
+    "frame_count": 6641,
+    "duration_s": 265.64,
+    "resolution": "960x544",
+    "codec": "H.264 / AVC",
+    "bitrate_kbps": 123.6,
+    "audio_codec": "AAC LC",
+    "audio_sample_rate_hz": 44100,
+    "audio_channels": "stereo",
+    "audio_duration_s": 265.61,
+    "source": "uploaded_reference_video"
+  },
+  "files": {
+    "ball": "ball.csv",
+    "players": "players.csv",
+    "motion": "motion.csv",
+    "quality": "quality.json",
+    "original_video": "original.mp4",
+    "overlay_video": "overlay.mp4",
+    "final_video": "final.mp4"
+  }
+}

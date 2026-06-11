@@ -1,0 +1,39 @@
+{
+  "video_id": "1_00_01",
+  "frame_count": 225,
+  "ball_visible_frames": 224,
+  "ball_detection_rate": 0.9955555555555555,
+  "ball_spatial_frames": 55,
+  "ball_spatial_rate": 0.24444444444444444,
+  "ball_interpolated_frames": 12,
+  "ball_low_confidence_frames": 103,
+  "ball_filtered_frames": 0,
+  "ball_filter_applied": true,
+  "ball_missing_segments": [
+    {
+      "start_frame": 0,
+      "end_frame": 0,
+      "length": 1
+    }
+  ],
+  "ball_quality_level": "Green",
+  "ball_quality_score": 98.67,
+  "ball_low_confidence": false,
+  "player_coverage": {
+    "near": 1.0,
+    "far": 0.2088888888888889
+  },
+  "source_files": {
+    "ball": "output/1_00_01/1_00_01_ball.csv",
+    "players": "output/1_00_01/1_00_01_players.csv",
+    "motion": "output/1_00_01/1_00_01_motion.csv",
+    "stats": "output/1_00_01/1_00_01_stats.json",
+    "original": "inputs/1_00_01.mp4",
+    "overlay": "output/1_00_01/1_00_01_overlay.mp4",
+    "final": "output/1_00_01/1_00_01_final.mp4"
+  },
+  "warnings": [
+    "Most shuttle detections cannot be reliably floor-projected; omitted from court map.",
+    "103 shuttle detections are filtered or interpolated low-confidence points."
+  ]
+}

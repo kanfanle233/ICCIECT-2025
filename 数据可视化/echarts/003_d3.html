@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>D3 多维动态平行坐标图</title>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <style>
+    /* 暗色主题，对齐 ECharts 的风格 */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      background-color: #333;
+      color: #fff;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    h2 {
+      margin-top: 10px;
+      margin-bottom: 5px;
+      color: #fff;
+      font-weight: bold;
+    }
+
+    svg {
+      font-size: 13px;
+    }
+
+    .foreground path {
+      fill: none;
+      stroke-opacity: 0.5;
+      stroke-width: 1.5px;
+      transition: stroke-width 0.2s, stroke-opacity 0.2s;
+    }
+
+    .foreground path:hover {
+      stroke-width: 4px;
+      stroke-opacity: 1;
+    }
+
+    /* 坐标轴样式 */
+    .axis line, .axis path {
+      stroke: #aaa;
+    }
+    .axis text {
+      fill: #fff;
+      cursor: grab;
+      font-weight: bold;
+      pointer-events: all;
+    }
+    .axis text:active {
+      cursor: grabbing;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>D3.js 可拖拽排版的平行坐标系</h2>
+  <div id="chart"></div>
+
+  <script>
+    // 定义边距和宽高
+    const margin = {top: 50, right: 80, bottom: 50, left: 80},
+          width = window.innerWidth * 0.85 - margin.left - margin.right,
+          height = window.innerHeight * 0.7 - margin.top - margin.bottom;
+
+    // 创建 SVG 容器
+    const svg = d3.select("#chart").append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    // 读取 CSV 文件
+    d3.csv("high_dimendinal_data1.csv").then(function(data) {
+      if (!data || data.length === 0) return;
+
+      // 动态提取所有的列名
+      const allCols = Object.keys(data[0]);
+      // 假设最后一列是"城市"或者用来归类的颜色列
+      const cityCol = allCols[allCols.length - 1]; 
+      // 其余的列作为坐标轴
+      let  dimensions = allCols.filter(d => d !== cityCol);
+      
+      // 提取城市集合，用作图例和颜色
+      const cities = Array.from(new Set(data.map(d => d[cityCol])));
+      const color = d3.scaleOrdinal()
+        .domain(cities)
+        // 使用一个漂亮的颜色盘
+        .range(["#d94e5d", "#eac736", "#50a3ba", "#6eb720", "#c1232b", "#ff9900"]);
+
+      // 建立各个维度的 Y 轴比例尺字典
+      const y = {};
+      for (let i = 0; i < dimensions.length; i++) {
+        let name = dimensions[i];
+        // 简单检测该维度列是否都是可以转换为数字的
+        let isNumeric = data.every(d => d[name] === "" || (!isNaN(parseFloat(d[name])) && isFinite(d[name])));
+        
+        if (isNumeric) {
+           y[name] = d3.scaleLinear()
+             .domain(d3.extent(data, d => +d[name]))
+             .range([height, 0]);
+        } else {
+           // 对于非数字的分类列
+           let domain = Array.from(new Set(data.map(d => d[name])));
+           y[name] = d3.scalePoint()
+             .domain(domain)
+             .range([height, 0])
+             .padding(0.1);
+        }
+      }
+
+      // 建立基础 X 轴比例尺（每个维度在什么横向位置）
+      const x = d3.scalePoint()
+        .range([0, width])
+        .padding(1)
+        .domain(dimensions);
+
+      // dragging 用于存储拖拽时某个维度的实时 x 坐标
+      const dragging = {};
+
+      // 当前 X 坐标的获取位置（拖拽中读取 dragging 的值，否则读取固定的 x() 比例尺的值）
+      function position(d) {
+        let v = dragging[d];
+        return v == null ? x(d) : v;
+      }
+
+      // 生成一条完整的线
+      function path(d) {
+        return d3.line()(dimensions.map(p => [position(p), y[p](d[p])]));
+      }
+
+      // 绘制具体的数据线条
+      const foreground = svg.append("g")
+          .attr("class", "foreground")
+        .selectAll("path")
+        .data(data)
+        .enter().append("path")
+          .attr("d", path)
+          .attr("stroke", d => color(d[cityCol]));
+
+      // 画坐标轴分组元素，为后续拖拽和画轴线做准备
+      const g = svg.selectAll(".dimension")
+          .data(dimensions)
+        .enter().append("g")
+          .attr("class", "dimension")
+          .attr("transform", d => "translate(" + x(d) + ")")
+          // 核心逻辑: 添加 D3 V7 Drag 拖拽事件处理器
+          .call(d3.drag()
+            .on("start", function(event, d) {
+              // 拖拽开始时保存初始点
+              dragging[d] = x(d);
+              foreground.attr("stroke-opacity", 0.2); // 变暗其余线条
+            })
+            .on("drag", function(event, d) {
+              // 把节点拖拽维持在屏幕范围内
+              dragging[d] = Math.min(width, Math.max(0, event.x));
+              
+              // 关键: 根据当前的 x 位置对 dimensions 进行重新排序
+              dimensions.sort((a, b) => position(a) - position(b));
+              // 更新 x 轴的主比例尺映射
+              x.domain(dimensions);
+              
+              // 更新被拖拽轴所在的 <g> 元素位置
+              g.attr("transform", function(d) { return "translate(" + position(d) + ")"; });
+              
+              // 实时更新数据线
+              foreground.attr("d", path);
+            })
+            .on("end", function(event, d) {
+              // 拖拽结束时清除临时标记
+              delete dragging[d];
+              // 让平移带一点动画效果的复位
+              d3.select(this).transition().duration(500).attr("transform", "translate(" + x(d) + ")");
+              // 让所有线条复位（注意要保持当前的高亮状态）
+              foreground.transition().duration(500).attr("d", path)
+                .attr("stroke-opacity", d => {
+                  if (activeCity) return d[cityCol] === activeCity ? 1 : 0;
+                  return 0.5;
+                });
+            })
+          );
+
+      // 给各个坐标轴渲染具体的 D3 轴刻度
+      g.append("g")
+          .attr("class", "axis")
+          .each(function(d) { d3.select(this).call(d3.axisLeft(y[d])); })
+        // 添加坐标轴标题文字
+        .append("text")
+          .style("text-anchor", "middle")
+          .attr("y", -15)
+          .text(d => d)
+          .style("fill", "#fff")
+          .style("font-size", "14px");
+          
+      // 添加底部图例以便看出不同颜色的代表代表哪个城市
+      const legendGroup = svg.append("g")
+          .attr("transform", `translate(0, ${height + 30})`);
+          
+      // 用于跟踪当前高亮的城市
+      let activeCity = null;
+
+      // 根据图例数组动态测算图例的间距和起始相对位置
+      const legendItemWidth = 100;
+      const totalLegendWidth = cities.length * legendItemWidth;
+      const startX = (width - totalLegendWidth) / 2;
+
+      const legend = legendGroup.selectAll(".legend")
+          .data(cities)
+        .enter().append("g")
+          .attr("class", "legend")
+          .attr("transform", (d, i) => `translate(${startX + i * legendItemWidth}, 0)`)
+          .style("cursor", "pointer")
+          .on("click", function(event, city) {
+            if (activeCity === city) {
+              // 再次点击取消高亮，恢复全部显示
+              activeCity = null;
+              foreground.style("display", null)
+                .transition().duration(300)
+                .attr("stroke-opacity", 0.5);
+              legend.transition().duration(300).style("opacity", 1);
+            } else {
+              // 点击高亮当前城市，将其余城市的线隐藏
+              activeCity = city;
+              foreground.style("display", d => d[cityCol] === city ? null : "none")
+                .transition().duration(300)
+                .attr("stroke-opacity", d => d[cityCol] === city ? 1 : 0);
+              // 图例文本对应变暗
+              legend.transition().duration(300).style("opacity", d => d === city ? 1 : 0.3);
+            }
+          });
+
+      legend.append("rect")
+          .attr("width", 15)
+          .attr("height", 15)
+          .attr("y", -12)
+          .style("fill", color);
+
+      legend.append("text")
+          .attr("x", 25)
+          .attr("y", 0)
+          .text(d => d)
+          .style("fill", "#fff")
+          .style("font-size", "14px");
+    });
+  </script>
+</body>
+</html>

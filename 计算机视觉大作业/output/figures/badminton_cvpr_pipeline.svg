@@ -1,0 +1,183 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2800" height="1600" viewBox="0 0 2800 1600">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<defs><marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M2,2 L10,6 L2,10 z" fill="#263445"/></marker></defs>
+<style>text{font-family:Arial,Helvetica,sans-serif}.title{font-size:46px;font-weight:700;fill:#111827}.sub{font-size:24px;fill:#4b5563}.panel{font-size:26px;font-weight:700;fill:#111827}.smallt{font-size:21px;font-weight:700;fill:#263445}.cardt{font-size:22px;font-weight:700;fill:#111827}.cardl{font-size:17px;fill:#4b5563}.formula{font-size:22px;font-weight:700;fill:#263445}.caption{font-size:21px;fill:#111827}</style>
+<text x="1400.0" y="70" text-anchor="middle" class="title">Figure 2. Proposed Badminton Video Analysis Workflow</text>
+<text x="1400.0" y="113" text-anchor="middle" class="sub">Dual-branch perception, court-plane projection, quality screening, and visual analytics</text>
+<rect x="70" y="170" width="420" height="1055" rx="16" fill="#ffffff" stroke="#cbd5e1" stroke-width="3"/>
+<rect x="520" y="170" width="1720" height="1055" rx="16" fill="#ffffff" stroke="#cbd5e1" stroke-width="3"/>
+<rect x="2270" y="170" width="460" height="1055" rx="16" fill="#ffffff" stroke="#cbd5e1" stroke-width="3"/>
+<rect x="100" y="205" width="55" height="42" rx="8" fill="#4f75c8" stroke="#4f75c8" stroke-width="1"/>
+<text x="127.5" y="234" text-anchor="middle" font-size="24" font-weight="700" fill="#ffffff">A</text>
+<text x="168" y="238" class="panel">Data and Prior Setup</text>
+<rect x="550" y="205" width="55" height="42" rx="8" fill="#4f75c8" stroke="#4f75c8" stroke-width="1"/>
+<text x="577.5" y="234" text-anchor="middle" font-size="24" font-weight="700" fill="#ffffff">B</text>
+<text x="618" y="238" class="panel">Dual-branch Perception Pipeline</text>
+<rect x="2300" y="205" width="55" height="42" rx="8" fill="#4f75c8" stroke="#4f75c8" stroke-width="1"/>
+<text x="2327.5" y="234" text-anchor="middle" font-size="24" font-weight="700" fill="#ffffff">C</text>
+<text x="2368" y="238" class="panel">Analytics Outputs</text>
+<rect x="110" y="330" width="350" height="155" rx="12" fill="#f8fafc" stroke="#111827" stroke-width="2.5"/>
+<circle cx="161" cy="404" r="29" fill="#ffffff" stroke="#111827" stroke-width="2.5"/>
+<g transform="translate(140,383) scale(1.75)"><rect x="4" y="6" width="16" height="12" rx="2" fill="none" stroke="#111827" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 9l5 3-5 3z" fill="#111827" stroke="none"/></g>
+<text x="202" y="382" class="cardt">Match video</text>
+<text x="202" y="414" class="cardl">RGB frames, fps, clip id</text>
+<text x="202" y="461" font-size="17" fill="#64748b">required input</text>
+<rect x="110" y="560" width="350" height="155" rx="12" fill="#f8fafc" stroke="#111827" stroke-width="2.5"/>
+<circle cx="161" cy="634" r="29" fill="#ffffff" stroke="#111827" stroke-width="2.5"/>
+<g transform="translate(140,613) scale(1.75)"><rect x="4" y="5" width="16" height="14" rx="1.5" fill="none" stroke="#111827" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 5v14M4 12h16M8 5v14M16 5v14" fill="none" stroke="#111827" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>
+<text x="202" y="612" class="cardt">Court prior</text>
+<text x="202" y="644" class="cardl">four corners + court size</text>
+<text x="202" y="691" font-size="17" fill="#64748b">homography setup</text>
+<rect x="110" y="790" width="350" height="155" rx="12" fill="#f8fafc" stroke="#111827" stroke-width="2.5"/>
+<circle cx="161" cy="864" r="29" fill="#ffffff" stroke="#111827" stroke-width="2.5"/>
+<g transform="translate(140,843) scale(1.75)"><circle cx="12" cy="12" r="3" fill="none" stroke="#111827" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 3v3M12 18v3M4.8 4.8l2.1 2.1M17.1 17.1l2.1 2.1M3 12h3M18 12h3M4.8 19.2l2.1-2.1M17.1 6.9l2.1-2.1" fill="none" stroke="#111827" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>
+<text x="202" y="842" class="cardt">Model weights</text>
+<text x="202" y="874" class="cardl">TrackNet + YOLOv8-pose</text>
+<text x="202" y="921" font-size="17" fill="#64748b">local checkpoints</text>
+<rect x="560" y="285" width="1640" height="325" rx="16" fill="#fbfdff" stroke="#d7dee8" stroke-width="2"/>
+<text x="585" y="326" class="smallt">Shuttle trajectory branch</text>
+<rect x="590" y="360" width="285" height="145" rx="12" fill="#edf4ff" stroke="#111827" stroke-width="2.5"/>
+<rect x="606" y="375" width="48" height="28" rx="7" fill="#4f75c8" stroke="#4f75c8" stroke-width="1"/>
+<text x="630" y="395" text-anchor="middle" font-size="17" font-weight="700" fill="#ffffff">S1</text>
+<circle cx="639" cy="452" r="29" fill="#ffffff" stroke="#111827" stroke-width="2.5"/>
+<g transform="translate(618,431) scale(1.75)"><path d="M5 9l7-4 7 4-7 4zM5 9v6l7 4 7-4V9M12 13v6" fill="none" stroke="#111827" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>
+<text x="682" y="412" class="cardt">Clip tensor</text>
+<text x="682" y="444" class="cardl">3-frame stack for</text>
+<text x="682" y="468" class="cardl">TrackNet</text>
+<rect x="910" y="360" width="285" height="145" rx="12" fill="#edf4ff" stroke="#111827" stroke-width="2.5"/>
+<rect x="926" y="375" width="48" height="28" rx="7" fill="#4f75c8" stroke="#4f75c8" stroke-width="1"/>
+<text x="950" y="395" text-anchor="middle" font-size="17" font-weight="700" fill="#ffffff">S2</text>
+<circle cx="959" cy="452" r="29" fill="#ffffff" stroke="#111827" stroke-width="2.5"/>
+<g transform="translate(938,431) scale(1.75)"><path d="M5 17c4-6 9-8 14-10" fill="none" stroke="#111827" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6" cy="17" r="2.2" fill="#111827" stroke="none"/><path d="M16 5l3 2-2 3M14 6l3 2-2 3" fill="none" stroke="#111827" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>
+<text x="1002" y="412" class="cardt">TrackNet heatmap</text>
+<text x="1002" y="444" class="cardl">shuttle probability</text>
+<text x="1002" y="468" class="cardl">map</text>
+<rect x="1230" y="360" width="285" height="145" rx="12" fill="#eaf8ef" stroke="#111827" stroke-width="2.5"/>
+<rect x="1246" y="375" width="48" height="28" rx="7" fill="#4f75c8" stroke="#4f75c8" stroke-width="1"/>
+<text x="1270" y="395" text-anchor="middle" font-size="17" font-weight="700" fill="#ffffff">S3</text>
+<circle cx="1279" cy="452" r="29" fill="#ffffff" stroke="#111827" stroke-width="2.5"/>
+<g transform="translate(1258,431) scale(1.75)"><path d="M4 6h16l-6 7v5l-4 2v-7z" fill="none" stroke="#111827" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 6l5 7" fill="none" stroke="#111827" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>
+<text x="1322" y="412" class="cardt">Trajectory screening</text>
+<text x="1322" y="444" class="cardl">ROI, static lock,</text>
+<text x="1322" y="468" class="cardl">jump rules</text>
+<rect x="1550" y="360" width="285" height="145" rx="12" fill="#eaf8ef" stroke="#111827" stroke-width="2.5"/>
+<rect x="1566" y="375" width="48" height="28" rx="7" fill="#4f75c8" stroke="#4f75c8" stroke-width="1"/>
+<text x="1590" y="395" text-anchor="middle" font-size="17" font-weight="700" fill="#ffffff">S4</text>
+<circle cx="1599" cy="452" r="29" fill="#ffffff" stroke="#111827" stroke-width="2.5"/>
+<g transform="translate(1578,431) scale(1.75)"><path d="M4 15c3-5 5-5 8 0s5 5 8 0" fill="none" stroke="#111827" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9c4-3 10-3 14 0" fill="none" stroke="#111827" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>
+<text x="1642" y="412" class="cardt">Temporal refinement</text>
+<text x="1642" y="444" class="cardl">Kalman smoothing +</text>
+<text x="1642" y="468" class="cardl">interpolation</text>
+<rect x="1870" y="360" width="285" height="145" rx="12" fill="#eaf8ef" stroke="#111827" stroke-width="2.5"/>
+<rect x="1886" y="375" width="48" height="28" rx="7" fill="#4f75c8" stroke="#4f75c8" stroke-width="1"/>
+<text x="1910" y="395" text-anchor="middle" font-size="17" font-weight="700" fill="#ffffff">S5</text>
+<circle cx="1919" cy="452" r="29" fill="#ffffff" stroke="#111827" stroke-width="2.5"/>
+<g transform="translate(1898,431) scale(1.75)"><circle cx="12" cy="12" r="8" fill="none" stroke="#111827" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8.4 12.4l2.4 2.4 5-5.6" fill="none" stroke="#111827" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>
+<text x="1962" y="412" class="cardt">Quality scoring</text>
+<text x="1962" y="444" class="cardl">visibility, gap,</text>
+<text x="1962" y="468" class="cardl">confidence</text>
+<line x1="875" y1="432" x2="904" y2="432" stroke="#263445" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="1195" y1="432" x2="1224" y2="432" stroke="#263445" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="1515" y1="432" x2="1544" y2="432" stroke="#263445" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="1835" y1="432" x2="1864" y2="432" stroke="#263445" stroke-width="4" marker-end="url(#arrow)"/>
+<rect x="1248" y="522" width="567" height="60" rx="9" fill="none" stroke="#ef4444" stroke-width="2" stroke-dasharray="12 10"/>
+<rect x="1270" y="535" width="126" height="34" rx="9" fill="#fff0f0" stroke="#fecaca" stroke-width="1.5"/>
+<text x="1283" y="558" font-size="17" fill="#111827">ROI reject</text>
+<rect x="1428" y="535" width="134" height="34" rx="9" fill="#fff0f0" stroke="#fecaca" stroke-width="1.5"/>
+<text x="1441" y="558" font-size="17" fill="#111827">static lock</text>
+<rect x="1585" y="535" width="126" height="34" rx="9" fill="#fff0f0" stroke="#fecaca" stroke-width="1.5"/>
+<text x="1598" y="558" font-size="17" fill="#111827">jump rule</text>
+<rect x="1735" y="535" width="126" height="34" rx="9" fill="#eaf8ef" stroke="#fecaca" stroke-width="1.5"/>
+<text x="1748" y="558" font-size="17" fill="#111827">interp</text>
+<rect x="620" y="645" width="1530" height="85" rx="13" fill="#e8f7fb" stroke="#9cc9da" stroke-width="2"/>
+<text x="650" y="699" class="smallt">Metric evidence fusion</text>
+<text x="970" y="699" class="formula">p_c = H p_i</text>
+<text x="1245" y="699" class="formula">v_t = ||p_t - p_{t-1}|| / dt</text>
+<text x="1620" y="699" class="formula">Q = sum_i w_i s_i</text>
+<text x="1890" y="699" class="formula">frontend export</text>
+<rect x="560" y="765" width="1640" height="323" rx="16" fill="#fffdf8" stroke="#d7dee8" stroke-width="2"/>
+<text x="585" y="806" class="smallt">Player motion branch</text>
+<rect x="590" y="840" width="285" height="145" rx="12" fill="#fff1df" stroke="#111827" stroke-width="2.5"/>
+<rect x="606" y="855" width="48" height="28" rx="7" fill="#4f75c8" stroke="#4f75c8" stroke-width="1"/>
+<text x="630" y="875" text-anchor="middle" font-size="17" font-weight="700" fill="#ffffff">P1</text>
+<circle cx="639" cy="932" r="29" fill="#ffffff" stroke="#111827" stroke-width="2.5"/>
+<g transform="translate(618,911) scale(1.75)"><circle cx="12" cy="5" r="2.4" fill="none" stroke="#111827" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 8v6M8 11h8M10 14l-3 6M14 14l3 6" fill="none" stroke="#111827" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>
+<text x="682" y="892" class="cardt">YOLOv8-pose</text>
+<text x="682" y="924" class="cardl">body keypoints per</text>
+<text x="682" y="948" class="cardl">frame</text>
+<rect x="910" y="840" width="285" height="145" rx="12" fill="#fff1df" stroke="#111827" stroke-width="2.5"/>
+<rect x="926" y="855" width="48" height="28" rx="7" fill="#4f75c8" stroke="#4f75c8" stroke-width="1"/>
+<text x="950" y="875" text-anchor="middle" font-size="17" font-weight="700" fill="#ffffff">P2</text>
+<circle cx="959" cy="932" r="29" fill="#ffffff" stroke="#111827" stroke-width="2.5"/>
+<g transform="translate(938,911) scale(1.75)"><path d="M8 5c2 3 2 6-1 9l-2 2c2 2 5 1 7-1M15 6c-1 3 0 6 3 9l1 2c-2 2-5 1-7-1" fill="none" stroke="#111827" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>
+<text x="1002" y="892" class="cardt">Foot-point extraction</text>
+<text x="1002" y="924" class="cardl">near/far player</text>
+<text x="1002" y="948" class="cardl">anchors</text>
+<rect x="1230" y="840" width="285" height="145" rx="12" fill="#fff8db" stroke="#111827" stroke-width="2.5"/>
+<rect x="1246" y="855" width="48" height="28" rx="7" fill="#4f75c8" stroke="#4f75c8" stroke-width="1"/>
+<text x="1270" y="875" text-anchor="middle" font-size="17" font-weight="700" fill="#ffffff">P3</text>
+<circle cx="1279" cy="932" r="29" fill="#ffffff" stroke="#111827" stroke-width="2.5"/>
+<g transform="translate(1258,911) scale(1.75)"><circle cx="7" cy="8" r="2.2" fill="none" stroke="#111827" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="17" cy="16" r="2.2" fill="none" stroke="#111827" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 9.5l6 5M6 17c3-5 7-8 12-10" fill="none" stroke="#111827" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>
+<text x="1322" y="892" class="cardt">ByteTrack identity</text>
+<text x="1322" y="924" class="cardl">low-score association</text>
+<rect x="1550" y="840" width="285" height="145" rx="12" fill="#fff8db" stroke="#111827" stroke-width="2.5"/>
+<rect x="1566" y="855" width="48" height="28" rx="7" fill="#4f75c8" stroke="#4f75c8" stroke-width="1"/>
+<text x="1590" y="875" text-anchor="middle" font-size="17" font-weight="700" fill="#ffffff">P4</text>
+<circle cx="1599" cy="932" r="29" fill="#ffffff" stroke="#111827" stroke-width="2.5"/>
+<g transform="translate(1578,911) scale(1.75)"><path d="M4 7l16-2v14L4 17zM4 12h16M9 6.4v11.2M15 5.6v12.8" fill="none" stroke="#111827" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>
+<text x="1642" y="892" class="cardt">Court projection</text>
+<text x="1642" y="924" class="cardl">pixel plane to metric</text>
+<text x="1642" y="948" class="cardl">court</text>
+<rect x="1870" y="840" width="285" height="145" rx="12" fill="#fff8db" stroke="#111827" stroke-width="2.5"/>
+<rect x="1886" y="855" width="48" height="28" rx="7" fill="#4f75c8" stroke="#4f75c8" stroke-width="1"/>
+<text x="1910" y="875" text-anchor="middle" font-size="17" font-weight="700" fill="#ffffff">P5</text>
+<circle cx="1919" cy="932" r="29" fill="#ffffff" stroke="#111827" stroke-width="2.5"/>
+<g transform="translate(1898,911) scale(1.75)"><path d="M5 16a7 7 0 0 1 14 0" fill="none" stroke="#111827" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 16l4-6" fill="none" stroke="#111827" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="16" r="1.4" fill="#111827" stroke="none"/></g>
+<text x="1962" y="892" class="cardt">Motion statistics</text>
+<text x="1962" y="924" class="cardl">distance, speed,</text>
+<text x="1962" y="948" class="cardl">rally time</text>
+<line x1="875" y1="912" x2="904" y2="912" stroke="#263445" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="1195" y1="912" x2="1224" y2="912" stroke="#263445" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="1515" y1="912" x2="1544" y2="912" stroke="#263445" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="1835" y1="912" x2="1864" y2="912" stroke="#263445" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="460" y1="407" x2="584" y2="432" stroke="#263445" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="460" y1="407" x2="584" y2="912" stroke="#263445" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="460" y1="637" x2="1550" y2="645" stroke="#263445" stroke-width="4" marker-end="url(#arrow)" stroke-dasharray="12 10"/>
+<line x1="460" y1="867" x2="910" y2="360" stroke="#263445" stroke-width="4" marker-end="url(#arrow)" stroke-dasharray="12 10"/>
+<line x1="460" y1="867" x2="590" y2="840" stroke="#263445" stroke-width="4" marker-end="url(#arrow)" stroke-dasharray="12 10"/>
+<line x1="2012" y1="505" x2="1980" y2="645" stroke="#263445" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="1693" y1="840" x2="1693" y2="730" stroke="#263445" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="2012" y1="985" x2="2020" y2="730" stroke="#263445" stroke-width="4" marker-end="url(#arrow)"/>
+<rect x="2310" y="315" width="390" height="150" rx="12" fill="#f8fafc" stroke="#111827" stroke-width="2.5"/>
+<circle cx="2361" cy="389" r="29" fill="#ffffff" stroke="#111827" stroke-width="2.5"/>
+<g transform="translate(2340,368) scale(1.75)"><rect x="4" y="5" width="16" height="14" rx="2" fill="none" stroke="#111827" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 5v14M16 5v14M4 10h4M16 10h4M4 15h4M16 15h4" fill="none" stroke="#111827" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>
+<text x="2402" y="367" class="cardt">Annotated video</text>
+<text x="2402" y="399" class="cardl">overlay.mp4 / final.mp4</text>
+<text x="2402" y="441" font-size="17" fill="#64748b">for visual review</text>
+<rect x="2310" y="535" width="390" height="150" rx="12" fill="#f8fafc" stroke="#111827" stroke-width="2.5"/>
+<circle cx="2361" cy="609" r="29" fill="#ffffff" stroke="#111827" stroke-width="2.5"/>
+<g transform="translate(2340,588) scale(1.75)"><path d="M7 3h7l4 4v14H7zM14 3v5h5M10 12h6M10 16h6" fill="none" stroke="#111827" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>
+<text x="2402" y="587" class="cardt">Structured tables</text>
+<text x="2402" y="619" class="cardl">ball.csv, players.csv, motion.csv</text>
+<text x="2402" y="661" font-size="17" fill="#64748b">for analysis</text>
+<rect x="2310" y="755" width="390" height="150" rx="12" fill="#f8fafc" stroke="#111827" stroke-width="2.5"/>
+<circle cx="2361" cy="829" r="29" fill="#ffffff" stroke="#111827" stroke-width="2.5"/>
+<g transform="translate(2340,808) scale(1.75)"><path d="M8 8l-3 4 3 4M16 8l3 4-3 4M13 6l-2 12" fill="none" stroke="#111827" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>
+<text x="2402" y="807" class="cardt">Quality report</text>
+<text x="2402" y="839" class="cardl">analysis.json, quality.json</text>
+<text x="2402" y="881" font-size="17" fill="#64748b">for audit</text>
+<rect x="2310" y="975" width="390" height="150" rx="12" fill="#f3f1ff" stroke="#111827" stroke-width="2.5"/>
+<circle cx="2361" cy="1049" r="29" fill="#ffffff" stroke="#111827" stroke-width="2.5"/>
+<g transform="translate(2340,1028) scale(1.75)"><rect x="4" y="5" width="16" height="12" rx="2" fill="none" stroke="#111827" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 21h8M12 17v4M8 13l3-3 2 2 3-5" fill="none" stroke="#111827" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>
+<text x="2402" y="1027" class="cardt">Interactive dashboard</text>
+<text x="2402" y="1059" class="cardl">mini-court, timeline, charts</text>
+<text x="2402" y="1101" font-size="17" fill="#64748b">frontend export</text>
+<line x1="2145" y1="432" x2="2300" y2="390" stroke="#263445" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="2145" y1="687" x2="2300" y2="610" stroke="#263445" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="2145" y1="687" x2="2300" y2="830" stroke="#263445" stroke-width="4" marker-end="url(#arrow)"/>
+<line x1="2145" y1="687" x2="2300" y2="1050" stroke="#263445" stroke-width="4" marker-end="url(#arrow)"/>
+<rect x="340" y="1270" width="2120" height="84" rx="13" fill="#f8fafc" stroke="#94a3b8" stroke-width="2"/>
+<text x="1400.0" y="1321" text-anchor="middle" font-size="19" font-weight="700" fill="#263445">Verified local data: 9 videos | 4247 frames | 150.68 s | all Green | quality 88.96-95.96 (mean 93.81) | shuttle visible 69.19% | player distance 714.72 m | max speed 9.46 m/s</text>
+<text x="300" y="1475" class="caption">Fig. 2. Overview of the proposed workflow. The video stream is processed by a shuttle trajectory branch and a player motion branch; court priors project</text>
+<text x="300" y="1505" class="caption">observations onto a metric court plane, after which quality-controlled evidence is exported as videos, tables, reports, and an interactive dashboard.</text>
+</svg>

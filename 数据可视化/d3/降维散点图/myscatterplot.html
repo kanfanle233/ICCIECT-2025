@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>基础的散点图</title>
+  <script src="../d3.min.js"></script>
+</head>
+<body>
+<div id="div_pca"></div>
+<script>
+const data = [
+  { x: 2160, y: 50 },
+  { x: 2165, y: 58 },
+  { x: 2170, y: 65 },
+  { x: 2175, y: 72 },
+  { x: 2180, y: 80 },
+  { x: 2172, y: 60 },
+  { x: 2168, y: 55 },
+  { x: 2178, y: 75 }
+];
+
+const margin = { top: 20, right: 20, bottom: 40, left: 50 };
+const width = 500 - margin.left - margin.right;
+const height = 400 - margin.top - margin.bottom;
+
+const svg = d3.select("#div_pca")
+  .append("svg")
+  .attr("id", "svg1")
+  .attr("width", width + margin.left + margin.right)
+  .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+  .attr("transform", `translate(${margin.left},${margin.top})`);
+
+const xScale = d3.scaleLinear()
+  .domain([2155, 2190])
+  .range([0, width]);
+
+const yScale = d3.scaleLinear()
+  .domain([50, 90])
+  .range([height, 0]);
+
+svg.append("g")
+  .attr("transform", `translate(0, ${height})`)
+  .call(d3.axisBottom(xScale));
+
+svg.append("g")
+  .call(d3.axisLeft(yScale));
+
+// 绘制连接线
+const line = d3.line()
+  .x(d => xScale(d.x))
+  .y(d => yScale(d.y));
+
+svg.append("path")
+  .datum(data.sort((a, b) => a.x - b.x)) // 按x值排序
+  .attr("d", line)
+  .attr("fill", "none")
+  .attr("stroke", "gray")
+  .attr("stroke-width", 1.5)
+  .attr("stroke-dasharray", "5,5");
+
+// 绘制散点
+svg.selectAll("circle")
+  .data(data)
+  .enter()
+  .append("circle")
+  .attr("cx", d => xScale(d.x))
+  .attr("cy", d => yScale(d.y))
+  .attr("r", 4)
+  .attr("fill", d => {
+    if (d.y <= 60) return "red";      // 最下面的点：红色
+    else if (d.y <= 70) return "blue"; // 中间的点：蓝色
+    else return "yellow";             // 最上面的点：黄色
+  })
+  .attr("class", "dot");
+
+// 添加框选功能
+const brush = d3.brush()
+  .extent([[0, 0], [width, height]])
+  .on("brush end", (event) => {
+    console.log(event);
+    const s = event.selection;
+    if (!s) return false;
+    
+    d3.selectAll(".dot")
+      .classed("selected", (d) => {
+        const px = xScale(d.x);
+        const py = yScale(d.y);
+        return px >= s[0][0] && 
+               px <= s[1][0] && 
+               py >= s[0][1] && 
+               py <= s[1][1];
+      });
+    
+    const selectedCount = d3.selectAll(".dot.selected").size();
+    d3.select("#count")
+      .text(`选中点数: ${selectedCount}`);
+  });
+
+svg.call(brush);
+</script>
+<style>
+.dot.selected {
+  stroke: black;
+  stroke-width: 2px;
+}
+</style>
+<div id="count"></div>
+</body>
+</html>

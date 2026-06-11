@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>202314109方昕哲</title>
+  <script src="./echarts.min.js"></script>
+  <style>
+    html, body, #chart {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="chart"></div>
+  <script>
+    var chart = echarts.init(document.getElementById('chart'));
+    var x = ['华北', '华东', '华南', '华中', '东北', '西北', '西南'];
+    var y = [420, 560, 480, 390, 260, 230, 340];
+
+    chart.setOption({
+      title: {
+        text: '202314109方昕哲',
+        left: 'center'
+      },
+      xAxis: {
+        type: 'category',
+        data: x
+      },
+      yAxis: {
+        type: 'value'
+      },
+      series: [
+        {
+          name: '销售收入',
+          type: 'line',
+          data: y
+        }
+      ]
+    });
+
+    window.onresize = function () {
+      chart.resize();
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+beautifulsoup4
+gensim
+jieba
+joblib
+jupyter
+lxml
+matplotlib
+numpy
+pandas
+scikit-learn
+scipy
+seaborn
+torch
+transformers

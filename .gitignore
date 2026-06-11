@@ -1,0 +1,80 @@
+# === OS files ===
+.DS_Store
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+._*
+
+# === IDE / Editor ===
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+*.manifest
+*.spec
+.Python
+env/
+venv/
+.venv/
+
+# === Jupyter ===
+.ipynb_checkpoints/
+
+# === Temporary files ===
+*.tmp
+~$*
+~WRL*.tmp
+tmp_*
+
+# === Model weights and large binary files ===
+*.pth
+*.h5
+*.pt
+*.onnx
+*.pb
+*.tflite
+
+# === Datasets and archives ===
+*.tar.gz
+*.zip
+*.rar
+*.7z
+
+# === Video files ===
+*.mp4
+*.avi
+*.mov
+*.mkv
+
+# === Private/sensitive data ===
+data/private/
+**/data/private/
+
+# === Specific large data directories ===
+数字图像处理/dazuoye/data/
+计算机视觉大作业/inputs/
+深度学习1/*.pth
+深度学习1/*.zip
+
+# === macOS specific ===
+.Spotlight-V100
+.Trashes
+.fseventsd
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# === PyCharm deployment ===
+.idea/deployment.xml

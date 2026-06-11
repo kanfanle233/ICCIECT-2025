@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>Simple Iris Scatter</title>
+  <script src="../d3.min.js"></script>
+</head>
+<body>
+  <!-- 图表容器 -->
+  <svg id="chart" width="800" height="500"></svg>
+
+  <script>
+    // 这里改数据文件名：iris.csv 或 dateforD3.csv
+    const csvPath = "iris.csv";
+
+    // 这里改用于降维/归一化的两列
+    const xKey = "Sepal.Length"; // X轴字段
+    const yKey = "Petal.Length"; // Y轴字段
+
+    // 这里改点的大小和颜色
+    const dotRadius = 4;
+    const dotColor = "#4daf4a";
+
+    // 这里改图表留白和画布大小
+    const svg = d3.select("#chart");
+    const margin = 30;
+    const width = +svg.attr("width") - margin * 2;
+    const height = +svg.attr("height") - margin * 2;
+    const g = svg.append("g").attr("transform", `translate(${margin},${margin})`);
+
+    // 归一化：把原始数据压到 0~1
+    const normalize = (value, extent) => (value - extent[0]) / ((extent[1] - extent[0]) || 1);
+
+    d3.csv(csvPath, d3.autoType).then(data => {
+      // 先找出两列的最小值和最大值
+      const xExtent = d3.extent(data, d => d[xKey]);
+      const yExtent = d3.extent(data, d => d[yKey]);
+
+      // 再把每一行数据归一化，得到新的 x 和 y
+      data.forEach(d => {
+        d.x = normalize(d[xKey], xExtent);
+        d.y = normalize(d[yKey], yExtent);
+      });
+
+      // 归一化后，坐标轴统一用 0~1
+      const x = d3.scaleLinear().domain([0, 1]).range([0, width]);
+      const y = d3.scaleLinear().domain([0, 1]).range([height, 0]);
+
+      // X 轴
+      g.append("g")
+        .attr("transform", `translate(0,${height})`)
+        .call(d3.axisBottom(x));
+
+      // Y 轴
+      g.append("g").call(d3.axisLeft(y));
+
+      // 散点
+      g.selectAll("circle")
+        .data(data)
+        .enter()
+        .append("circle")
+        .attr("cx", d => x(d.x))
+        .attr("cy", d => y(d.y))
+        .attr("r", dotRadius)
+        .attr("fill", dotColor)
+        .attr("opacity", 0.8);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,131 @@
+{
+  "input_csv": "/Users/davidfang/PyCharmMiscProject/minicondapythonProject1/计算机视觉大作业/output/pro_match17_1_15_13/pro_match17_1_15_13_ball_tracknet_raw.csv",
+  "output_csv": "/Users/davidfang/PyCharmMiscProject/minicondapythonProject1/计算机视觉大作业/output/pro_match17_1_15_13/pro_match17_1_15_13_ball.csv",
+  "inpaintnet_enabled": false,
+  "inpaintnet_path": "",
+  "parameters": {
+    "court_points": [
+      [
+        424.0,
+        370.0
+      ],
+      [
+        886.0,
+        375.0
+      ],
+      [
+        991.0,
+        678.0
+      ],
+      [
+        223.0,
+        671.0
+      ]
+    ],
+    "flight_roi": [
+      [
+        174.0,
+        20.0
+      ],
+      [
+        1136.0,
+        25.0
+      ],
+      [
+        1241.0,
+        728.0
+      ],
+      [
+        -27.0,
+        721.0
+      ]
+    ],
+    "top_pad_px": 350.0,
+    "side_pad_px": 250.0,
+    "bottom_pad_px": 50.0,
+    "min_motion_score": 0.0,
+    "static_run_frames": 15,
+    "static_radius_px": 2.5,
+    "max_step_px": 250.0,
+    "max_dir_change_deg": 175.0,
+    "max_gap": 15,
+    "sigma_q": 10.0,
+    "sigma_r": 3.0
+  },
+  "counts": {
+    "frames": 531,
+    "raw_visible": 522,
+    "in_roi": 522,
+    "rejected_roi": 0,
+    "rejected_static_motion": 1,
+    "rejected_static_lock": 0,
+    "rejected_jump": 14,
+    "retained_model": 507,
+    "smoothed": 507,
+    "interpolated": 23,
+    "final_visible": 530,
+    "max_missing_gap": 0
+  },
+  "examples": {
+    "rejected_jump": [
+      {
+        "frame": 5,
+        "dir_change_deg": 180.0,
+        "speed_px_per_gap_prev": 5.0,
+        "speed_px_per_gap_next": 5.0
+      },
+      {
+        "frame": 12,
+        "dir_change_deg": 175.6,
+        "speed_px_per_gap_prev": 2.2,
+        "speed_px_per_gap_next": 5.8
+      },
+      {
+        "frame": 15,
+        "dir_change_deg": 178.1,
+        "speed_px_per_gap_prev": 7.3,
+        "speed_px_per_gap_next": 4.1
+      },
+      {
+        "frame": 16,
+        "dir_change_deg": 180.0,
+        "speed_px_per_gap_prev": 4.1,
+        "speed_px_per_gap_next": 4.1
+      },
+      {
+        "frame": 29,
+        "dir_change_deg": 180.0,
+        "speed_px_per_gap_prev": 1.4,
+        "speed_px_per_gap_next": 1.4
+      }
+    ],
+    "interpolated": [
+      {
+        "frame_from": 4,
+        "frame_to": 6,
+        "gap": 1
+      },
+      {
+        "frame_from": 11,
+        "frame_to": 13,
+        "gap": 1
+      },
+      {
+        "frame_from": 14,
+        "frame_to": 17,
+        "gap": 2
+      },
+      {
+        "frame_from": 28,
+        "frame_to": 30,
+        "gap": 1
+      },
+      {
+        "frame_from": 38,
+        "frame_to": 40,
+        "gap": 1
+      }
+    ]
+  },
+  "warning": "Refined points use conservative Kalman smoothing and short-gap interpolation. Long gaps remain un-filled.  Points with Source=interp are not model predictions."
+}

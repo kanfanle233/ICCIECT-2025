@@ -1,0 +1,60 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Temporary files
+*.tmp
+~$*
+~WRL*.tmp
+*~
+
+# macOS
+.DS_Store
+.DS_Store?
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Private data (student scores, personal information)
+data/private/
+
+# Large model files (optional, uncomment if needed)
+# models/lstm_rank/*.h5
+# models/lstm_rank/*.pth
+# models/lstm_rank_opt/*.h5
+# models/lstm_rank_opt/*.pth
+# models/mlp_rank/*.h5
+# models/mlp_rank/*.pth
+# models/transformer_rank/*.h5
+# models/transformer_rank/*.pth
+
+# Intermediate data (optional, uncomment if needed)
+# data/interim/*.csv
+
+# Archive directory (contains duplicates and old files)
+# archive/
+

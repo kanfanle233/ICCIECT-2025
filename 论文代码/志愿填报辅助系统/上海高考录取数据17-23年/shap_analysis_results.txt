@@ -1,0 +1,10 @@
+=== SHAP 可解释性分析报告 ===
+
+数据规模: (70480, 11)
+特征: ['mbti_w', 'difficulty']
+模型性能 - MAE: 0.0000, R²: 1.0000
+
+特征重要性:
+      feature  importance
+0      mbti_w    0.818498
+1  difficulty    0.181502

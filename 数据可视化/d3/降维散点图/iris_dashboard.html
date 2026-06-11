@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>燕尾花降维聚类分析</title>
+  <script src="../d3.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 12px; }
+    .controls { margin-bottom: 10px; }
+    .controls label { margin-right: 12px; }
+    .stats { margin: 8px 0 12px; font-size: 14px; }
+    .panel { display: inline-block; vertical-align: top; margin-right: 16px; }
+    .panel h3 { margin: 0 0 8px; font-size: 16px; }
+    .dot { opacity: 0.85; }
+    .dot.selected { stroke: #111; stroke-width: 1.5px; }
+    .axis-label { font-size: 12px; fill: #333; }
+    .legend-item { font-size: 12px; }
+  </style>
+</head>
+<body>
+<h2>燕尾花：降维 + 聚类 + 筛选 + 统计</h2>
+
+<div class="controls">
+  <label>物种筛选:
+    <select id="speciesFilter">
+      <option value="all">全部</option>
+      <option value="setosa">setosa</option>
+      <option value="versicolor">versicolor</option>
+      <option value="virginica">virginica</option>
+    </select>
+  </label>
+  <label>聚类筛选:
+    <select id="clusterFilter">
+      <option value="all">全部</option>
+      <option value="0">簇 0</option>
+      <option value="1">簇 1</option>
+      <option value="2">簇 2</option>
+    </select>
+  </label>
+  <button id="resetBrush">清除框选</button>
+  <button id="startLasso">开始圈选</button>
+  <button id="clearLasso">清除圈选</button>
+</div>
+
+<div class="stats" id="stats"></div>
+
+<div class="panel">
+  <h3>PCA 降维散点图（PC1 vs PC2）</h3>
+  <div id="scatter"></div>
+</div>
+<div class="panel">
+  <h3>物种分布饼图（当前筛选）</h3>
+  <div id="pie"></div>
+</div>
+<div class="panel">
+  <h3>平行坐标图（当前筛选）</h3>
+  <div id="parallel"></div>
+</div>
+
+<script>
+const featureKeys = ["Sepal.Length", "Sepal.Width", "Petal.Length", "Petal.Width"];
+const clusterColor = d3.scaleOrdinal()
+  .domain([0, 1, 2])
+  .range(["#e41a1c", "#377eb8", "#ffbf00"]);
+const speciesColor = d3.scaleOrdinal()
+  .domain(["setosa", "versicolor", "virginica"])
+  .range(["#66c2a5", "#8da0cb", "#fc8d62"]);
+
+const scatterMargin = { top: 20, right: 20, bottom: 40, left: 50 };
+const scatterWidth = 520 - scatterMargin.left - scatterMargin.right;
+const scatterHeight = 420 - scatterMargin.top - scatterMargin.bottom;
+
+const pieSize = 320;
+const pieRadius = 110;
+const parallelMargin = { top: 20, right: 10, bottom: 35, left: 10 };
+const parallelWidth = 420 - parallelMargin.left - parallelMargin.right;
+const parallelHeight = 420 - parallelMargin.top - parallelMargin.bottom;
+
+let fullData = [];
+let filteredData = [];
+let brushedIds = new Set();
+let scatterG = null;
+let lassoPath = [];
+let isLassoActive = false;
+let lassoPolygon = [];
+
+const scatterSvg = d3.select("#scatter")
+  .append("svg")
+  .attr("width", scatterWidth + scatterMargin.left + scatterMargin.right)
+  .attr("height", scatterHeight + scatterMargin.top + scatterMargin.bottom);
+
+scatterG = scatterSvg.append("g")
+  .attr("transform", `translate(${scatterMargin.left},${scatterMargin.top})`);
+
+const pieSvg = d3.select("#pie")
+  .append("svg")
+  .attr("width", pieSize)
+  .attr("height", pieSize)
+  .append("g")
+  .attr("transform", `translate(${pieSize / 2},${pieSize / 2})`);
+
+const parallelSvg = d3.select("#parallel")
+  .append("svg")
+  .attr("width", parallelWidth + parallelMargin.left + parallelMargin.right)
+  .attr("height", parallelHeight + parallelMargin.top + parallelMargin.bottom)
+  .append("g")
+  .attr("transform", `translate(${parallelMargin.left},${parallelMargin.top})`);
+
+function mean(arr) {
+  return arr.reduce((a, b) => a + b, 0) / arr.length;
+}
+
+function std(arr, m) {
+  const variance = arr.reduce((sum, v) => sum + (v - m) * (v - m), 0) / (arr.length - 1);
+  return Math.sqrt(variance) || 1;
+}
+
+function dot(a, b) {
+  let s = 0;
+  for (let i = 0; i < a.length; i += 1) s += a[i] * b[i];
+  return s;
+}
+
+function matVecMul(mat, vec) {
+  return mat.map(row => dot(row, vec));
+}
+
+function normalize(vec) {
+  const n = Math.sqrt(dot(vec, vec)) || 1;
+  return vec.map(v => v / n);
+}
+
+function powerIteration(mat, iterations) {
+  let v = Array(mat.length).fill(0).map((_, i) => (i % 2 === 0 ? 1 : -1));
+  v = normalize(v);
+  for (let i = 0; i < iterations; i += 1) {
+    v = normalize(matVecMul(mat, v));
+  }
+  const mv = matVecMul(mat, v);
+  const eigenValue = dot(v, mv);
+  return { vector: v, value: eigenValue };
+}
+
+function outer(vec) {
+  return vec.map(a => vec.map(b => a * b));
+}
+
+function matrixSubtract(a, b) {
+  return a.map((row, i) => row.map((v, j) => v - b[i][j]));
+}
+
+function covarianceMatrix(zRows) {
+  const p = zRows[0].length;
+  const cov = Array.from({ length: p }, () => Array(p).fill(0));
+  for (let i = 0; i < p; i += 1) {
+    for (let j = 0; j < p; j += 1) {
+      let s = 0;
+      for (let r = 0; r < zRows.length; r += 1) s += zRows[r][i] * zRows[r][j];
+      cov[i][j] = s / (zRows.length - 1);
+    }
+  }
+  return cov;
+}
+
+function runPca(rows) {
+  const values = featureKeys.map(k => rows.map(d => d[k]));
+  const means = values.map(v => mean(v));
+  const stds = values.map((v, i) => std(v, means[i]));
+  const zRows = rows.map(d => featureKeys.map((k, i) => (d[k] - means[i]) / stds[i]));
+  const cov = covarianceMatrix(zRows);
+
+  const pc1 = powerIteration(cov, 120);
+  const deflated = matrixSubtract(cov, outer(pc1.vector).map(row => row.map(v => v * pc1.value)));
+  const pc2 = powerIteration(deflated, 120);
+
+  const totalVar = cov[0][0] + cov[1][1] + cov[2][2] + cov[3][3];
+  const explained = ((pc1.value + pc2.value) / totalVar) * 100;
+
+  rows.forEach((d, i) => {
+    d.pc1 = dot(zRows[i], pc1.vector);
+    d.pc2 = dot(zRows[i], pc2.vector);
+  });
+  return explained;
+}
+
+function runKmeans(rows, k, iterations) {
+  const points = rows.map(d => [d.pc1, d.pc2]);
+  let centers = points.slice(0, k).map(p => p.slice());
+  let labels = Array(points.length).fill(0);
+
+  for (let t = 0; t < iterations; t += 1) {
+    labels = points.map((p) => {
+      let bestIdx = 0;
+      let bestDist = Infinity;
+      centers.forEach((c, i) => {
+        const dx = p[0] - c[0];
+        const dy = p[1] - c[1];
+        const dist = dx * dx + dy * dy;
+        if (dist < bestDist) {
+          bestDist = dist;
+          bestIdx = i;
+        }
+      });
+      return bestIdx;
+    });
+
+    const sums = Array.from({ length: k }, () => [0, 0, 0]);
+    points.forEach((p, i) => {
+      const ci = labels[i];
+      sums[ci][0] += p[0];
+      sums[ci][1] += p[1];
+      sums[ci][2] += 1;
+    });
+    centers = centers.map((c, i) => {
+      if (sums[i][2] === 0) return c;
+      return [sums[i][0] / sums[i][2], sums[i][1] / sums[i][2]];
+    });
+  }
+
+  rows.forEach((d, i) => { d.cluster = labels[i]; });
+}
+
+function getCurrentFilteredData() {
+  const speciesFilter = d3.select("#speciesFilter").property("value");
+  const clusterFilter = d3.select("#clusterFilter").property("value");
+
+  return fullData.filter((d) => {
+    const speciesOk = speciesFilter === "all" || d.Species === speciesFilter;
+    const clusterOk = clusterFilter === "all" || String(d.cluster) === clusterFilter;
+    return speciesOk && clusterOk;
+  });
+}
+
+function updateStats(pcaExplained) {
+  const selectedCount = brushedIds.size;
+  const bySpecies = d3.rollups(filteredData, v => v.length, d => d.Species)
+    .sort((a, b) => d3.ascending(a[0], b[0]))
+    .map(([k, v]) => `${k}:${v}`)
+    .join(" | ");
+
+  d3.select("#stats").text(
+    `总样本: ${fullData.length}，当前筛选: ${filteredData.length}，框选: ${selectedCount}，PCA前两维解释方差: ${pcaExplained.toFixed(2)}%，物种统计: ${bySpecies || "无"}`
+  );
+}
+
+function drawScatter(pcaExplained) {
+  scatterG.selectAll("*").remove();
+
+  const xScale = d3.scaleLinear()
+    .domain(d3.extent(fullData, d => d.pc1)).nice()
+    .range([0, scatterWidth]);
+  const yScale = d3.scaleLinear()
+    .domain(d3.extent(fullData, d => d.pc2)).nice()
+    .range([scatterHeight, 0]);
+
+  scatterG.append("g")
+    .attr("transform", `translate(0, ${scatterHeight})`)
+    .call(d3.axisBottom(xScale));
+  scatterG.append("g")
+    .call(d3.axisLeft(yScale));
+
+  scatterG.append("text")
+    .attr("class", "axis-label")
+    .attr("x", scatterWidth / 2 - 20)
+    .attr("y", scatterHeight + 32)
+    .text("PC1");
+  scatterG.append("text")
+    .attr("class", "axis-label")
+    .attr("transform", "rotate(-90)")
+    .attr("x", -scatterHeight / 2 - 20)
+    .attr("y", -35)
+    .text("PC2");
+
+  const dots = scatterG.selectAll(".dot")
+    .data(filteredData, d => d.id)
+    .enter()
+    .append("circle")
+    .attr("class", "dot")
+    .attr("cx", d => xScale(d.pc1))
+    .attr("cy", d => yScale(d.pc2))
+    .attr("r", 4)
+    .attr("fill", d => clusterColor(d.cluster));
+
+  dots.classed("selected", d => brushedIds.has(d.id));
+
+  const brush = d3.brush()
+    .extent([[0, 0], [scatterWidth, scatterHeight]])
+    .on("brush end", (event) => {
+      const s = event.selection;
+      brushedIds = new Set();
+      if (s) {
+        dots.classed("selected", (d) => {
+          const px = xScale(d.pc1);
+          const py = yScale(d.pc2);
+          const inside = px >= s[0][0] && px <= s[1][0] && py >= s[0][1] && py <= s[1][1];
+          if (inside) brushedIds.add(d.id);
+          return inside;
+        });
+      } else {
+        dots.classed("selected", false);
+      }
+      updateStats(pcaExplained);
+    });
+
+  scatterG.append("g").call(brush);
+
+  d3.select("#resetBrush").on("click", () => {
+    brushedIds = new Set();
+    dots.classed("selected", false);
+    scatterG.select(".brush").call(brush.move, null);
+    updateStats(pcaExplained);
+  });
+
+  d3.select("#startLasso").on("click", () => {
+    isLassoActive = true;
+    lassoPath = [];
+    scatterSvg.select(".lasso-path").remove();
+    scatterSvg.select(".lasso-dot").remove();
+  });
+
+  d3.select("#clearLasso").on("click", () => {
+    lassoPath = [];
+    lassoPolygon = [];
+    isLassoActive = false;
+    scatterSvg.select(".lasso-path").remove();
+    scatterSvg.select(".lasso-dot").remove();
+    brushedIds.clear();
+    renderAll(pcaExplained);
+  });
+
+  scatterSvg.on("mousedown", (event) => {
+    if (!isLassoActive) return;
+    lassoPath = [[event.offsetX - scatterMargin.left, event.offsetY - scatterMargin.top]];
+    drawLasso();
+  }).on("mousemove", (event) => {
+    if (!isLassoActive || lassoPath.length === 0) return;
+    lassoPath.push([event.offsetX - scatterMargin.left, event.offsetY - scatterMargin.top]);
+    drawLasso();
+  }).on("mouseup", () => {
+    if (!isLassoActive || lassoPath.length < 3) return;
+    lassoPolygon = lassoPath;
+    updateLassoSelection();
+    isLassoActive = false;
+  });
+}
+
+function drawPie() {
+  pieSvg.selectAll("*").remove();
+  
+  const displayData = brushedIds.size > 0 ? 
+    filteredData.filter(d => brushedIds.has(d.id)) : 
+    filteredData;
+  
+  const speciesCount = d3.rollups(
+    displayData,
+    v => v.length,
+    d => d.Species
+  );
+  
+  if (speciesCount.length === 0) return;
+  
+  const pie = d3.pie().value(d => d[1]);
+  const arc = d3.arc().innerRadius(0).outerRadius(pieRadius);
+  
+  pieSvg.selectAll(".pie-slice")
+    .data(pie(speciesCount))
+    .enter()
+    .append("path")
+    .attr("class", "pie-slice")
+    .attr("d", arc)
+    .attr("fill", d => speciesColor(d.data[0]));
+  
+  pieSvg.selectAll(".pie-label")
+    .data(pie(speciesCount))
+    .enter()
+    .append("text")
+    .attr("class", "pie-label")
+    .attr("transform", d => `translate(${arc.centroid(d)})`)
+    .attr("text-anchor", "middle")
+    .attr("font-size", 11)
+    .text(d => `${d.data[0]}: ${d.data[1]}`);
+}
+
+function drawParallel() {
+  parallelSvg.selectAll("*").remove();
+  const dims = featureKeys.slice();
+  let currentDims = [...dims];
+  
+  const x = d3.scalePoint()
+    .domain(currentDims)
+    .range([0, parallelWidth]);
+
+  const y = {};
+  currentDims.forEach(k => {
+    y[k] = d3.scaleLinear()
+      .domain(d3.extent(filteredData, d => d[k]))
+      .range([parallelHeight, 0]);
+  });
+
+  const line = d3.line();
+  const path = d => line(currentDims.map(k => [x(k), y[k](d[k])]));
+
+  const lines = parallelSvg.selectAll(".p-line")
+    .data(filteredData)
+    .enter()
+    .append("path")
+    .attr("class", "p-line")
+    .attr("d", path)
+    .attr("fill", "none")
+    .attr("stroke", d => clusterColor(d.cluster))
+    .attr("stroke-width", 1)
+    .attr("stroke-opacity", d => brushedIds.size > 0 ? (brushedIds.has(d.id) ? 1 : 0.2) : 0.45);
+
+  const axisGroups = parallelSvg.selectAll(".axis-group")
+    .data(currentDims)
+    .enter()
+    .append("g")
+    .attr("class", "axis-group")
+    .attr("transform", k => `translate(${x(k)},0)`)
+    .call(g => g.append("g").call(d3.axisLeft(y[k])))
+    .call(g => g.append("text")
+      .attr("y", parallelHeight + 20)
+      .attr("text-anchor", "middle")
+      .attr("font-size", 11)
+      .text(k)
+      .attr("class", "dim-label")
+      .style("cursor", "move")
+      .call(d3.drag()
+        .on("start", function(event, k) {
+          d3.select(this).raise();
+        })
+        .on("drag", function(event, k) {
+          const newX = event.x;
+          if (newX >= 0 && newX <= parallelWidth) {
+            d3.select(this.parentNode)
+              .attr("transform", `translate(${newX},0)`);
+          }
+        })
+        .on("end", function(event, k) {
+          const newX = event.x;
+          const newIndex = Math.round((newX / parallelWidth) * (currentDims.length - 1));
+          if (newIndex >= 0 && newIndex < currentDims.length) {
+            const oldIndex = currentDims.indexOf(k);
+            if (oldIndex !== newIndex) {
+              currentDims.splice(oldIndex, 1);
+              currentDims.splice(newIndex, 0, k);
+              x.domain(currentDims);
+              lines.attr("d", path);
+              axisGroups
+                .data(currentDims)
+                .attr("transform", k => `translate(${x(k)},0)`)
+                .select("text")
+                .text(k);
+            }
+          }
+        })
+      )
+    );
+}
+
+function drawLasso() {
+  scatterSvg.select(".lasso-path").remove();
+  scatterSvg.select(".lasso-dot").remove();
+  
+  if (lassoPath.length > 0) {
+    const line = d3.line();
+    scatterSvg.append("path")
+      .attr("class", "lasso-path")
+      .attr("d", line(lassoPath))
+      .attr("fill", "none")
+      .attr("stroke", "#ff6b6b")
+      .attr("stroke-width", 2)
+      .attr("stroke-dasharray", "4,4")
+      .attr("transform", `translate(${scatterMargin.left},${scatterMargin.top})`);
+  }
+}
+
+function updateLassoSelection() {
+  brushedIds.clear();
+  
+  filteredData.forEach(d => {
+    const px = xScale(d.pc1);
+    const py = yScale(d.pc2);
+    if (isPointInPolygon([px, py], lassoPolygon)) {
+      brushedIds.add(d.id);
+    }
+  });
+  
+  drawScatter();
+  drawPie();
+  updateStats();
+}
+
+function isPointInPolygon(point, polygon) {
+  const [x, y] = point;
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const [xi, yi] = polygon[i];
+    const [xj, yj] = polygon[j];
+    const intersect = ((yi > y) !== (yj > y)) &&
+      (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+function renderAll(pcaExplained) {
+  filteredData = getCurrentFilteredData();
+  brushedIds = new Set([...brushedIds].filter(id => filteredData.some(d => d.id === id)));
+  drawScatter(pcaExplained);
+  drawPie();
+  drawParallel();
+  updateStats(pcaExplained);
+}
+
+d3.csv("iris.csv").then((rows) => {
+  fullData = rows.map((d, i) => ({
+    id: i,
+    "Sepal.Length": +d["Sepal.Length"],
+    "Sepal.Width": +d["Sepal.Width"],
+    "Petal.Length": +d["Petal.Length"],
+    "Petal.Width": +d["Petal.Width"],
+    Species: d.Species
+  }));
+
+  const pcaExplained = runPca(fullData);
+  runKmeans(fullData, 3, 30);
+
+  d3.select("#speciesFilter").on("change", () => renderAll(pcaExplained));
+  d3.select("#clusterFilter").on("change", () => renderAll(pcaExplained));
+  renderAll(pcaExplained);
+});
+</script>
+</body>
+</html>

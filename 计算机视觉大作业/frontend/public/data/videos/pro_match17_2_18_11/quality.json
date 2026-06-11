@@ -1,0 +1,44 @@
+{
+  "video_id": "pro_match17_2_18_11",
+  "frame_count": 501,
+  "ball_visible_frames": 477,
+  "ball_detection_rate": 0.9520958083832335,
+  "ball_spatial_frames": 58,
+  "ball_spatial_rate": 0.1157684630738523,
+  "ball_interpolated_frames": 22,
+  "ball_low_confidence_frames": 62,
+  "ball_filtered_frames": 0,
+  "ball_filter_applied": true,
+  "ball_missing_segments": [
+    {
+      "start_frame": 0,
+      "end_frame": 0,
+      "length": 1
+    },
+    {
+      "start_frame": 16,
+      "end_frame": 38,
+      "length": 23
+    }
+  ],
+  "ball_quality_level": "Green",
+  "ball_quality_score": 98.29,
+  "ball_low_confidence": false,
+  "player_coverage": {
+    "near": 1.0,
+    "far": 0.9880239520958084
+  },
+  "source_files": {
+    "ball": "output/pro_match17_2_18_11/pro_match17_2_18_11_ball.csv",
+    "players": "output/pro_match17_2_18_11/pro_match17_2_18_11_players.csv",
+    "motion": "output/pro_match17_2_18_11/pro_match17_2_18_11_motion.csv",
+    "stats": "output/pro_match17_2_18_11/pro_match17_2_18_11_stats.json",
+    "original": "inputs/pro_match17_2_18_11.mp4",
+    "overlay": "output/pro_match17_2_18_11/pro_match17_2_18_11_overlay.mp4",
+    "final": "output/pro_match17_2_18_11/pro_match17_2_18_11_final.mp4"
+  },
+  "warnings": [
+    "Most shuttle detections cannot be reliably floor-projected; omitted from court map.",
+    "62 shuttle detections are filtered or interpolated low-confidence points."
+  ]
+}

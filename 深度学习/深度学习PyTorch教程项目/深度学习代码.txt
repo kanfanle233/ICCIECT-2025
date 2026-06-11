@@ -1,0 +1,2890 @@
+========== deep.py ==========
+from pathlib import Path
+
+def normalize_newlines(s: str) -> str:
+    return s.replace("\r\n", "\n").replace("\r", "\n")
+
+def main():
+    # deep.py 所在目录：E:\...\深度学习\某个子目录
+    here = Path(__file__).resolve().parent
+
+    # 你的目录结构：项目根\深度学习\xxxx\deep.py
+    # 所以“深度学习”目录就是 here 的父目录
+    dl_dir = here.parent  # E:\代码\minicondapythonProject1\深度学习
+
+    # 再保险一下：确认目录名确实是“深度学习”
+    if dl_dir.name != "深度学习":
+        raise FileNotFoundError(
+            f"定位失败：推断的深度学习目录是 {dl_dir}，但目录名不是“深度学习”。\n"
+            f"请检查 deep.py 是否放在 深度学习 的子目录下。"
+        )
+
+    # 只收集“当前这个子目录”（截图里那个乱码目录）下的 .py
+    # 如果你想收集整个“深度学习”目录，把这里改成：dl_dir.rglob("*.py")
+    target_dir = here
+
+    py_files = sorted(
+        [f for f in target_dir.rglob("*.py")
+         if f.is_file()
+         and "__pycache__" not in f.parts
+         and ".idea" not in f.parts
+         and ".git" not in f.parts],
+        key=lambda x: x.relative_to(target_dir).as_posix()
+    )
+
+    if not py_files:
+        raise RuntimeError(f"目录 {target_dir} 下没有找到任何 .py 文件。")
+
+    out_path = target_dir / "深度学习代码.txt"
+
+    with out_path.open("w", encoding="utf-8") as out:
+        for f in py_files:
+            rel = f.relative_to(target_dir).as_posix()
+            out.write(f"========== {rel} ==========\n")
+
+            text = f.read_text(encoding="utf-8", errors="replace")
+            text = normalize_newlines(text).rstrip("\n")
+            out.write(text + "\n")
+
+    print(f"✅ 已生成：{out_path}")
+
+if __name__ == "__main__":
+    main()
+========== p00_瀵圭収瀛︿範np鍜宼orch.py ==========
+import numpy as np
+import torch
+
+# 常数
+print(np.array(123.45))
+print(torch.tensor(123.45))
+# 一维数组
+print(np.array([1.2, 3.45, 6.78]))
+print(torch.tensor([1.2, 3.45, 6.78]))
+# 多维维数组
+np.array([[1.2, 3.45], [6.78, 9.]])
+print(torch.tensor([[1.2, 3.45], [6.78, 9.]]))
+# 随机数组(由[0, 1)上的随机数构成的3行4列数组)
+a = np.random.rand(4, 5)
+print(a)
+b = torch.rand(4, 5)
+print(b)
+
+# 下标  a[3][2]
+print(a[3, 2])     # 从0开始数的第3行第2列数据
+print(b[2, 4])     # 从0开始数的第2行第4列数据
+
+# 数组切片
+print(a[2:4, 1:5]) # 左上角在[2,1]的2行4列数据
+print(b[2:3, 1:3]) # 左上角在[3,1]的1行2列数据
+print(a[2:, 3:5])   # 左上角在[2,3]的2行2列数据
+print(b[2:, :3])    # 左上角在[2,0]的2行3列数据
+print(a[:, 2:4])    # 左上角在[0,2]的4行2列数据
+print(b[2:4, 3:])   # 左上角在[2,3]的2行2列数据
+print(a[:3, :])     # 左上角在[0,0]的3行5列数据
+print(b[:, :])      # 左上角在[0,0]的4行5列数据
+print(a[2])         # 等价于a[2, :]
+print(b[2:4])       # 等价于b[2:4, :]
+
+# 维度(ndim)和形状(shape)
+print(a.ndim)       # a的维度, 2
+print(b.ndim)
+
+print(a.shape)
+print(b.shape[0])
+print(b.shape[1])
+print(len(b))       # 等价于b.shape[0]
+
+# 整形(Reshape)
+print(a.reshape([2, 10]))     # 形状从[4, 5]转为[2, 10]。既可以用列表
+print(b.reshape((2, 2, 5)))    # 也可以用元组表示目标形状，整形前后要保证各维度长度的乘积相等.
+                        # np和torch几乎所有操作都产生一个新数组，而不改变原数组
+                        # 也就是说，a、b仍保持原形状[4, 5]。
+print(a.reshape([2, -1, 5]))   # 等价于a.reshape([2, 2, 5])，-1代表自动计算。a保持原形状。
+print(b.reshape([5, -1]))      # 等价于b.reshape([5, 4])，b保持原形状。
+
+# 转置(transpose), 结果不同
+print(np.random.rand(2,3,4).transpose([1, 2, 0]))         # 第0/1/2个维度转位第2/0/1个维度
+print(torch.rand(2, 3, 4).transpose(0, 2))     # 交换第0个和第2个维度
+
+# 多维数组转为1维数组
+print(a.flatten())    # 等价于a.reshape([-1])
+print(b.flatten())
+
+# 增加一个维度
+print(np.expand_dims(a, 1)) # 在1号维度上增加一个长度为1的维度，形状从[4, 5]转为[4, 1, 5]
+print(b.unsqueeze(2))            # 在2号维度上增加一个长度为1的维度，形状从[4, 5]转为[4, 5, 1]
+
+# 指定维度重复若干倍, 参数含义不同
+print(a.repeat(3, 1)) # 1号维度（及其数据）重复3倍，形状从[4, 5]转为[4,15]
+print(b.repeat(1, 3))             # 0号和1号维度分别复制1、3倍，结果形状是[4, 15]
+
+# 修改某行某列的值，PyTorch只有在张量是个常量时可以
+a[2, 3] = 12.34567
+b[2, :] = 12.34567         # 第2行所有数据改为12.34567。
+a[1::2, 0:5:2] = 3.456     # 把第1、3行的第0、2、4个数改为3.456。
+b[:-1, :-2] = 78.9         # 除最后一行外，每一行倒数第2个（从后往前应该从1开始数）数
+                           # 之前的所有数改为78.9。
+
+# 参数，唯一PyTorch有而numpy没有的东西
+print(torch.nn.Parameter([[2., 3., 4.], [1., -1., -4.]]))  # 用指定初值创建一个参数
+# 参数的本质是一个可以被优化的变量。所以它不同于Python的变量。
+========== p02_1_姹備换鎰忔暟鐨勫钩鏂规牴.py ==========
+import torch
+
+class MyModel(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.x = torch.nn.Parameter(torch.tensor(1.0))
+
+    def forward(self, a):
+        return self.x**2 - a
+
+model = MyModel()
+# 准备优化器
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+
+# 训练
+model.train()               # 模型进入训练模式
+a = 3     # 求a的平方根
+for epoch in range(200):      # 训练200轮
+    pred = model(a)         # 构建预测张量（张量可以理解为公式）
+    loss = torch.square(pred) # 构建损失张量
+    loss.backward()         # 反向传播梯度（即根据损失优化模型的参数）
+    optimizer.step()        # 优化器根据梯度张量优化模型的参数
+    optimizer.zero_grad()   # 清空梯度。否则会影响下一次循环
+    epoch += 1
+    if epoch % 100 == 0:
+        print(f'epoch {epoch:4d}: loss = {loss.item():.6f}')
+print('训练完毕')
+
+# 输出平方根
+print(model.x.detach().item())
+========== p03_0_瑙ｆ柟绋嬬粍.py ==========
+# 求解方程组：
+# x + 3y = 4
+# 4x - 2y = 1
+
+import torch
+
+class MyModel(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.x = torch.nn.Parameter(torch.tensor(1.0))
+        self.y = torch.nn.Parameter(torch.tensor(1.0))
+
+    def forward(self):
+        return (self.x + 3 * self.y - 4,
+                4 * self.x - 2 * self.y - 1)
+
+model = MyModel()
+# 准备优化器
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+
+# 训练
+model.train()               # 模型进入训练模式
+for epoch in range(2000):      # 训练200轮
+    goal1, goal2 = model()         # 构建预测张量（张量可以理解为公式）
+    loss = goal1**2 + torch.square(goal2) # 构建损失张量
+    loss.backward()         # 反向传播梯度（即根据损失优化模型的参数）
+    optimizer.step()        # 优化器根据梯度张量优化模型的参数
+    optimizer.zero_grad()   # 清空梯度。否则会影响下一次循环
+    epoch += 1
+    if epoch % 100 == 0:
+        print(f'epoch {epoch:4d}: loss = {loss.item():.6f}')
+print('训练完毕')
+
+# 输出
+x = model.x.detach().item()
+y = model.y.detach().item()
+print(f"x={x}")
+print(f"y={y}")
+print(x + 3 * y - 4)
+print(4 * x - 2 * y - 1)
+========== p05_0_pyplot.py ==========
+from matplotlib import pyplot as ppl
+import numpy as np
+
+x = (np.random.rand(500) * 2 - 1) * np.pi  # -pi ~ pi
+y1 = np.sin(x)
+y2 = np.cos(x)
+
+ppl.scatter(x, y1, label="sin", color="red")
+ppl.scatter(x, y2, label="cos", color="blue")
+ppl.legend()
+ppl.show()
+========== p05_2_瀛愬浘.py ==========
+from matplotlib import pyplot as ppl
+import numpy as np
+
+x = np.linspace(-np.pi, np.pi, 500)  # -pi ~ pi
+y1 = np.sin(x)
+y2 = np.cos(x)
+
+# 1行2列，第1个子图
+ppl.subplot(1, 2, 1)
+ppl.plot(x, y1, label="sin", color="red")
+ppl.legend()
+ppl.title("Sin")
+
+# 1行2列，第2个子图
+ppl.subplot(1, 2, 2)
+ppl.plot(x, y2, label="cos", color="blue")
+ppl.legend()
+ppl.title("Cos")
+
+ppl.show()
+========== p05_3_16杩涘埗棰滆壊.py ==========
+from matplotlib import pyplot as ppl
+import numpy as np
+
+x = np.linspace(-np.pi, np.pi, 500)  # -pi ~ pi
+y1 = np.sin(x)
+y2 = np.cos(x)
+
+# 用16进制表示颜色
+ppl.plot(x, y1+y2, label="sin+cos", color="#FF0000") # 红色
+ppl.plot(x, y1-y2, label="sin-cos", color="#00FF00") # 绿色
+ppl.plot(x, y1*y2, label="sin*cos", color="#0000FF") # 蓝色
+ppl.plot(x, y1, label="sin", color="#B3B3B3") # 浅灰色
+ppl.plot(x, y2, label="cos", color="#0A0A0A") # 深灰色
+ppl.legend()
+ppl.show()
+========== p06_0_鏁扮粍.py ==========
+import numpy as np
+import torch
+
+# 常数
+print(np.array(123.45))
+print(torch.tensor(123.45))
+# 一维数组
+print(np.array([1.2, 3.45, 6.78]))
+print(torch.tensor([1.2, 3.45, 6.78]))
+# 多维数组
+np.array([[1.2, 3.45], [6.78, 9.]])
+print(torch.tensor([[1.2, 3.45], [6.78, 9.]]))
+# 随机数组(由[0, 1)上的随机数构成的3行4列数组)
+a = np.random.rand(4, 5)
+print(a)
+b = torch.rand(4, 5)
+print(b)
+
+# 下标  a[3][2]
+print(a[3, 2])     # 从0开始数的第3行第2列数据
+print(b[2, 4])     # 从0开始数的第2行第4列数据
+
+# 数组切片
+print(a[2:4, 1:5]) # 左上角在[2,1]的2行4列数据
+print(b[2:3, 1:3]) # 左上角在[2,1]的1行2列数据
+print(a[2:, 3:5])   # 左上角在[2,3]的2行2列数据
+print(b[2:, :3])    # 左上角在[2,0]的2行3列数据
+print(a[:, 2:4])    # 左上角在[0,2]的4行2列数据
+print(b[2:4, 3:])   # 左上角在[2,3]的2行2列数据
+print(a[:3, :])     # 左上角在[0,0]的3行5列数据
+print(b[:, :])      # 左上角在[0,0]的4行5列数据
+print(a[2])         # 等价于a[2, :]
+print(b[2:4])       # 等价于b[2:4, :]
+print(a[0, 0::2])
+print(a[0, 1::2])
+
+
+# 维度(ndim)和形状(shape)
+print(a.ndim)       # a的维度, 2
+print(b.ndim)
+
+print(a.shape)      # (4, 5)
+print(b.shape[0])   # 4
+print(b.shape[1])   # 5
+print(len(b))       # 等价于b.shape[0]
+
+# 整形(Reshape)
+print(a.reshape([2, 10]))     # 形状从[4, 5]转为[2, 10]。既可以用列表
+print(b.reshape((2, 2, 5)))    # 也可以用元组表示目标形状，整形前后要保证各维度长度的乘积相等.
+                        # np和torch几乎所有操作都产生一个新数组，而不改变原数组
+                        # 也就是说，a、b仍保持原形状[4, 5]。
+print(a.reshape([2, -1, 5]))   # 等价于a.reshape([2, 2, 5])，-1代表自动计算。a保持原形状。
+print(b.reshape([5, -1]))      # 等价于b.reshape([5, 4])，b保持原形状。
+
+# 转置(transpose), 结果不同
+print(np.random.rand(2,3,4).transpose([1, 2, 0]))         # 第0/1/2个维度转位第2/0/1个维度
+print(torch.rand(2, 3, 4).transpose(0, 2))     # 交换第0个和第2个维度
+
+# 多维数组转为1维数组
+print(a.flatten())    # 等价于a.reshape([-1])
+print(b.flatten())
+
+# 增加一个维度
+print(np.expand_dims(a, 1)) # 在1号维度上增加一个长度为1的维度，形状从[4, 5]转为[4, 1, 5]
+print(b.unsqueeze(2))            # 在2号维度上增加一个长度为1的维度，形状从[4, 5]转为[4, 5, 1]
+
+# 指定维度重复若干倍, 参数含义不同
+print(a.repeat(3, 1)) # 1号维度（及其数据）重复3倍，形状从[4, 5]转为[4,15]
+print(b.repeat(1, 3))             # 0号和1号维度分别复制1、3倍，结果形状是[4, 15]
+
+# 修改某行某列的值，PyTorch只有在张量是个常量时可以
+a[2, 3] = 12.34567
+b[2, :] = 12.34567         # 第2行所有数据改为12.34567。
+a[1::2, 0:5:2] = 3.456     # 把第1、3行的第0、2、4个数改为3.456。
+b[:-1, :-2] = 78.9         # 除最后一行外，每一行倒数第2个（从后往前应该从1开始数）数
+                           # 之前的所有数改为78.9。
+
+# 矩阵乘法
+a1 = np.random.uniform(-10, 10, [2, 3])
+a2 = np.random.uniform(-10, 10, [3, 5])
+a3 = np.matmul(a1, a2)      # [2, 5]
+print("a1=\n", a1)
+print("a1.shape=", a1.shape)
+print("a2=\n", a2)
+print("a2.shape=", a2.shape)
+print("a3=\n", a3)
+print("a3.shape=", a3.shape)
+
+# 参数，唯一PyTorch有而numpy没有的东西
+init = torch.tensor([[2., 3., 4.], [1., -1., -4.]])
+print(torch.nn.Parameter(init))  # 用指定初值创建一个参数
+# 参数的本质是一个可以被优化的变量。所以它不同于Python的变量。
+========== p07_2_澶氬厓绾挎€у洖褰掑拰Linear.py ==========
+# 多元线性回归, 使用torch.nn.Linear
+# 已知函数f:X->y的若干样本{X[i, :]}和{y[i]}, i=1, 2, ..., n。
+# 求函数f(x) = XA+b，使得mean(Sigma( (f(X[i]) - y[i])**2, i=1,...,n))达到最小
+#
+import torch
+import numpy as np
+import matplotlib.pyplot as ppl
+
+# 准备样本, 4元线性回归
+x = np.random.uniform(-2, 2, [500, 4])
+print("x=\n", x)
+print("x.shape=", x.shape)  # [500]
+# 计算y = xA + b，其中：
+#   1）x.ndim == 2 and x.shape[1] == A.shape[0]
+#   2）A.ndim == 2
+#   3）b.ndim == 1 and b.shape[0] == A.shape[1]
+#   4) y.ndim == 2 and y.shape == (x.shape[0], A.shape[1])
+y = np.matmul(x, [[2], [-1], [3], [-2]]) + [2]
+
+# 增加噪声。实际应用中样本数据不会那么精准，总会有点噪声
+y += np.random.normal(0, 0.1, [500, 1])
+print("y=\n", x)
+print("y.shape=", y.shape)  # [500]
+
+# 创建模型
+class MyModel(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        # 线性变换预定义模型
+        self.line = torch.nn.Linear(4, 1)
+
+    def forward(self, x):   # x: [500, 4]
+        return self.line(x) # [500,1]
+
+model = MyModel()
+# 准备优化器
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+
+# 训练
+model.train()               # 模型进入训练模式
+x = torch.tensor(np.float32(x))
+y = torch.tensor(np.float32(y))
+losses = []
+for epoch in range(2000):   # 训练若干轮
+    goal = model(x)         # [?, 1]
+    loss = torch.mean(torch.square(goal - y)) # 损失必须是一个标量(scalar)
+    loss.backward()         # 反向传播梯度（即根据损失优化模型的参数）
+    optimizer.step()        # 优化器根据梯度张量优化模型的参数
+    optimizer.zero_grad()   # 清空梯度。否则会影响下一次循环
+    losses.append(loss.item())
+    epoch += 1
+    if epoch % 100 == 0:
+        print(f'epoch {epoch:4d}: loss = {loss.item():.10f}')
+print('训练完毕')
+
+model.eval()
+with torch.no_grad():
+    for p in model.parameters():
+        print(p.numpy())
+
+ppl.plot(np.arange(len(losses)), losses)
+ppl.show()
+========== p07_3_涓€鍏冮潪绾挎€у洖褰抇sin.py ==========
+# 一元线性回归，即最小二乘法
+# 已知函数f:x->y的若干样本{x[i]}和{y[i]}, i=1, 2, ..., n。
+# 求函数f(x) = c(relu(ax + b)) + d，使得mean(Sigma( (f(x[i]) - y[i])**2, i=1,...,n))达到最小
+# relu(x) = max(0, x)
+
+import torch
+import numpy as np
+import matplotlib.pyplot as ppl
+
+# 准备样本
+x = np.random.uniform(-np.pi, np.pi, [500, 1])
+print("x.shape=", x.shape)  # [100]
+y = np.sin(x)
+print("y.shape=", y.shape)  # [500]
+
+# 创建模型
+class MyModel(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.line1 = torch.nn.Linear(1, 500)
+        self.relu = torch.nn.ReLU()  # relu(x) == max(0, x)
+        self.line2 = torch.nn.Linear(500, 1)
+
+    def forward(self, x):   # [?, 1]
+        y = self.line1(x)   # [?, 500]
+        y = self.relu(y)    # [?, 500]
+        y = self.line2(y)   # [?, 1]
+        return y
+
+model = MyModel()
+# 准备优化器
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+# 训练
+model.train()               # 模型进入训练模式
+x = torch.tensor(x).float()
+y = torch.tensor(y).float()
+for epoch in range(2000):   # 训练若干轮
+    goal = model(x)         # 构建预测张量（张量可以理解为公式）
+    loss = torch.mean(torch.square(goal - y)) # 损失必须是一个标量(scalar)
+    loss.backward()         # 反向传播梯度（即根据损失优化模型的参数）
+    optimizer.step()        # 优化器根据梯度张量优化模型的参数
+    optimizer.zero_grad()   # 清空梯度。否则会影响下一次循环
+    epoch += 1
+    if epoch % 100 == 0:
+        print(f'epoch {epoch:4d}: loss = {loss.item():.10f}')
+print('训练完毕')
+
+# 测试
+x = np.linspace(-2*np.pi, 2*np.pi, 1000, dtype=np.float32)
+y = np.sin(x)
+model.eval()
+with torch.no_grad():
+    p = torch.tensor(x.reshape([-1, 1]))
+    p = model(p)
+    p = p.numpy().reshape([-1])
+ppl.plot(x, y, color="red", label="sin")
+ppl.plot(x, p, color="blue", label="predict")
+ppl.show()
+========== p07_4_涓€鍏冨椤瑰紡鍥炲綊_sin.py ==========
+# 一元线性回归，即最小二乘法
+# 已知函数f:x->y的若干样本{x[i]}和{y[i]}, i=1, 2, ..., n。
+# 求函数f(x) = c(relu(ax + b)) + d，使得mean(Sigma( (f(x[i]) - y[i])**2, i=1,...,n))达到最小
+# relu(x) = max(0, x)
+
+import torch
+import numpy as np
+import matplotlib.pyplot as ppl
+
+# 准备样本
+x = np.random.uniform(-np.pi, np.pi, [500, 1])
+print("x.shape=", x.shape)  # [100]
+y = np.sin(x)
+print("y.shape=", y.shape)  # [500]
+
+# 创建模型
+class PolyModel(torch.nn.Module):
+    def __init__(self, rank:int):
+        super().__init__()
+        self.rank = rank
+        self.line = torch.nn.Linear(rank, 1)
+
+    def forward(self, x):   # [?, 1]
+        poly = []
+        power = 1
+        for i in range(self.rank):
+            power = (power * x)/(i+1)       # [?, 1]
+            poly.append(power)
+        poly = torch.concat(poly, 1)    # [?, rank]
+        y = self.line(poly)
+        return y        # [?, 1]
+
+model = PolyModel(30)
+# 准备优化器
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+# 训练
+model.train()               # 模型进入训练模式
+x = torch.tensor(x).float()
+y = torch.tensor(y).float()
+loss_fn = torch.nn.MSELoss()    # 均方差损失
+for epoch in range(10000):   # 训练若干轮
+    goal = model(x)         # 构建预测张量（张量可以理解为公式）
+    # loss = torch.mean(torch.square(goal - y)) # 损失必须是一个标量(scalar)
+    loss = loss_fn(goal, y)
+    loss.backward()         # 反向传播梯度（即根据损失优化模型的参数）
+    optimizer.step()        # 优化器根据梯度张量优化模型的参数
+    optimizer.zero_grad()   # 清空梯度。否则会影响下一次循环
+    epoch += 1
+    if epoch % 100 == 0:
+        print(f'epoch {epoch:4d}: loss = {loss.item():.10f}')
+print('训练完毕')
+
+# 测试
+x = np.linspace(-np.pi, np.pi, 1000, dtype=np.float32)
+y = np.sin(x)
+model.eval()
+with torch.no_grad():
+    ps = 0
+    for p in model.parameters():
+        ps += p.numel()
+        print(p.numpy())
+    print("parameters:", ps)
+    p = torch.tensor(x.reshape([-1, 1]))
+    p = model(p)
+    p = p.numpy().reshape([-1])
+ppl.plot(x, y, color="red", label="sin")
+ppl.plot(x, p, color="blue", label="predict")
+ppl.show()
+========== p07_5_浜屽厓闈炵嚎褰簩鍒嗙被.py ==========
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import numpy as np
+from sklearn.datasets import make_moons
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+import matplotlib.pyplot as plt
+
+# 设置随机种子以确保结果可重现
+torch.manual_seed(42)
+np.random.seed(42)
+
+# 1. 创建合成数据集
+X, y = make_moons(n_samples=1000, noise=0.2, random_state=42)
+
+# 将数据转换为PyTorch张量
+X = torch.from_numpy(X).float()
+y = torch.from_numpy(y).float()
+
+# 重塑y的形状为(n_samples, 1)
+y = y.view(-1, 1)
+
+# 划分训练集和测试集
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+
+# 2. 定义神经网络模型
+class BinaryClassifier(nn.Module):
+    def __init__(self, input_dim, hidden_dim, output_dim):
+        super(BinaryClassifier, self).__init__()
+        self.layer1 = nn.Linear(input_dim, hidden_dim)
+        self.relu = nn.ReLU()
+        self.layer2 = nn.Linear(hidden_dim, output_dim)
+        self.sigmoid = nn.Sigmoid()  # y = 1/(1 + e**(-x))
+
+    def forward(self, x):   # [?, input_dim]
+        x = self.layer1(x)  # [?, hidden_dim]
+        x = self.relu(x)
+        x = self.layer2(x)  # [?, output_dim]
+        x = self.sigmoid(x)
+        return x
+
+
+# 初始化模型
+input_dim = 2
+hidden_dim = 10
+output_dim = 1
+model = BinaryClassifier(input_dim, hidden_dim, output_dim)
+
+# 3. 定义损失函数和优化器
+criterion = nn.BCELoss()  # 二分类交叉熵损失
+optimizer = optim.Adam(model.parameters(), lr=0.01)
+
+# 4. 训练模型
+num_epochs = 1000
+losses = []
+
+for epoch in range(num_epochs):
+    # 前向传播
+    outputs = model(X_train)
+    loss = criterion(outputs, y_train)
+
+    # 反向传播和优化
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+
+    losses.append(loss.item())
+
+    if (epoch + 1) % 100 == 0:
+        print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}')
+
+# 5. 评估模型
+model.eval()  # 设置模型为评估模式
+with torch.no_grad():
+    # 训练集准确率
+    train_outputs = model(X_train)
+    train_predicted = (train_outputs >= 0.5).float()
+    train_accuracy = accuracy_score(y_train, train_predicted)
+
+    # 测试集准确率
+    test_outputs = model(X_test)
+    test_predicted = (test_outputs >= 0.5).float()
+    test_accuracy = accuracy_score(y_test, test_predicted)
+
+print(f'训练集准确率: {train_accuracy:.4f}')
+print(f'测试集准确率: {test_accuracy:.4f}')
+
+
+# 6. 可视化决策边界（可选）
+def plot_decision_boundary(model, X, y):
+    x_min, x_max = X[:, 0].min() - 0.5, X[:, 0].max() + 0.5
+    y_min, y_max = X[:, 1].min() - 0.5, X[:, 1].max() + 0.5
+    h = 0.01
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
+                         np.arange(y_min, y_max, h))
+
+    Z = model(torch.from_numpy(np.c_[xx.ravel(), yy.ravel()]).float())
+    Z = (Z >= 0.5).float().numpy().reshape(xx.shape)
+
+    plt.contourf(xx, yy, Z, alpha=0.8, cmap=plt.cm.RdBu)
+    plt.scatter(X[:, 0], X[:, 1], c=y, edgecolors='k', marker='o', s=50)
+    plt.title("决策边界")
+    plt.show()
+
+plt.rcParams['font.sans-serif'] = ['SimHei']  # 用来正常显示中文标签
+plt.rcParams['axes.unicode_minus'] = False    # 用来正常显示负号
+
+# 绘制决策边界
+plot_decision_boundary(model, X.numpy(), y.numpy())
+
+# 绘制损失曲线
+plt.plot(losses)
+plt.title('训练损失曲线')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.show()
+========== p07_6_浜屽厓闈炵嚎褰簩鍒嗙被_鏍锋湰_.py ==========
+import matplotlib.pyplot as ppl
+from sklearn.datasets import make_moons
+
+ppl.rcParams['font.sans-serif'] = ['SimHei']  # 用来正常显示中文标签
+ppl.rcParams['axes.unicode_minus'] = False    # 用来正常显示负号
+
+# 生成不同参数的数据集
+# ppl.subplot(rows, cols, order)
+_, axes = ppl.subplots(2, 2, figsize=(12, 10))
+
+# 1. 默认参数
+X1, y1 = make_moons(n_samples=100, noise=0.0, random_state=42)
+axes[0,0].scatter(X1[:,0], X1[:,1], c=y1, cmap=ppl.cm.RdBu)
+axes[0,0].set_title('无噪声 (noise=0.0)')
+
+# 2. 添加少量噪声
+X2, y2 = make_moons(n_samples=100, noise=0.1, random_state=42)
+axes[0,1].scatter(X2[:,0], X2[:,1], c=y2, cmap=ppl.cm.RdBu)
+axes[0,1].set_title('少量噪声 (noise=0.1)')
+
+# 3. 添加中等噪声
+X3, y3 = make_moons(n_samples=100, noise=0.2, random_state=42)
+axes[1,0].scatter(X3[:,0], X3[:,1], c=y3, cmap=ppl.cm.RdBu)
+axes[1,0].set_title('中等噪声 (noise=0.2)')
+
+# 4. 不平衡数据集
+X4, y4 = make_moons(n_samples=(80, 20), noise=0.1, random_state=42)
+axes[1,1].scatter(X4[:,0], X4[:,1], c=y4, cmap=ppl.cm.RdBu)
+axes[1,1].set_title('不平衡数据集 (80:20)')
+
+ppl.tight_layout()
+ppl.show()
+========== p08_0_Mnist_鏍锋湰鍜屾爣绛綺34.py ==========
+from torchvision import datasets as ds, transforms
+import matplotlib.pyplot as ppl
+
+tr = transforms.RandomAffine(45, (0.3,0.3))
+dataset = ds.MNIST(root=r'../资源/', train=True, download=False)
+print(len(dataset))
+_, axes = ppl.subplots(5, 10)
+for row in range(5):
+    for col in range(10):
+        n = row*10 + col
+        img, label = dataset[n]
+        img = tr(img)
+        print(label, img.width, img.height)
+        ax = axes[row][col]
+        ax.imshow(img)
+        ax.set_title(str(label))  # ppl.title()
+        ax.axis("off")     # 不显示坐标轴
+ppl.show()
+========== p08_1_Mnist_鍗风Н姹犲寲婵€娲诲叏杩炴帴softmax_34.py ==========
+"""
+MNIST手写数字识别模型
+关于卷积神经网络，最好的电子教材之一：
+https://cloud.tencent.com/developer/article/2109487
+"""
+from torchvision import datasets as ds, transforms as ts
+from torch.utils.data import DataLoader
+import torch
+import numpy as np
+
+import matplotlib.pyplot as ppl
+
+batch_size = 100
+lr = 0.01
+epochs = 2
+
+# 1. 准备样本
+dataset = ds.MNIST(root=r'../资源/', train=True, download=True,
+                         transform=ts.ToTensor())
+dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+
+# 2. 建模
+class MnistModel(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.net = torch.nn.Sequential(
+            # [1, 28, 28] --> [8, 14, 14]
+            torch.nn.Conv2d(1, 8, 3, 1, 1),
+            torch.nn.ReLU(),
+            torch.nn.MaxPool2d(2, 2),
+
+            # [8, 14, 14] --> [16, 7, 7]
+            torch.nn.Conv2d(8, 16, 3, 1, 1),
+            torch.nn.ReLU(),
+            torch.nn.MaxPool2d(2, 2),
+
+            # [16, 7, 7] --> [10]
+            torch.nn.Flatten(),
+            torch.nn.Linear(7*7*16, 10) # 不需要调用Softmax, 交叉熵损失函数会计算
+        )
+
+    def forward(self, x):  # [?, 1, 28, 28]
+        y = self.net(x)  # [?, 10] 输出10个logit值
+        return y
+
+model = MnistModel()
+optimier = torch.optim.Adam(model.parameters(), lr=lr)
+loss_fn = torch.nn.CrossEntropyLoss()   # 交叉熵损失函数
+
+# 3. 训练
+model.train()
+total_losses = []
+for epoch in range(epochs):
+    losses = []
+    for batch, (x, y) in enumerate(dataloader):
+        # x: [?, 1, 28, 28], y: [?]
+        logits = model(x)
+        # 不需要对logits调用softmax函数，不需要把y转为独热向量
+        loss = loss_fn(logits, y)
+
+        loss.backward()
+        optimier.step()
+        optimier.zero_grad()
+
+        losses.append(loss.item())
+        loss = np.mean(losses)
+        print(f"epoch: {epoch+1}.{batch+1}, loss: {loss:.6f}")
+        total_losses.append(loss)
+
+print("训练完毕！")
+
+# 4. 测试
+def show_accuracy(dl, title):
+    accuracy = []
+    for x, y in dl:
+        p = model(x)
+        p = p.numpy()   # [?, 10]
+        # 沿着1号维度获取最大值所在的索引(下标)
+        p = np.argmax(p, 1) # [?]
+        a = np.mean(p == y.numpy())
+        accuracy.append(a)
+    print(f'{title}准确率: {np.mean(accuracy):.6f}')
+
+model.eval()
+with torch.no_grad():
+    show_accuracy(dataloader, "训练")
+    dataset = ds.MNIST(root=r'../资源/', train=False, download=True,
+                             transform=ts.ToTensor())
+    dataloader = DataLoader(dataset, batch_size=batch_size)
+    show_accuracy(dataloader, "测试")
+
+ppl.scatter(np.arange(len(total_losses)), total_losses)
+ppl.show()
+========== p09_0_CIFAR10_鏍锋湰.py ==========
+# p090_CIFAR_样本.py
+from torchvision import datasets as ds
+import matplotlib.pyplot as ppl
+
+CLASS = ('飞机', '汽车', '鸟类', '猫', '鹿', '狗', '青蛙', '马', '船', '卡车')
+
+dataset = ds.CIFAR10(root=r'../资源/', train=True, download=True)
+print("训练样本：", len(dataset))     # 50000
+dataset = ds.CIFAR10(root=r'../资源/', train=False, download=True)
+print("测试样本：", len(dataset))     # 10000
+
+ppl.rcParams['font.sans-serif'] = ['SimHei']  # 用来正常显示中文标签
+ppl.rcParams['axes.unicode_minus'] = False    # 用来正常显示负号
+_, axes = ppl.subplots(5, 10)
+for row in range(5):
+    for col in range(10):
+        n = row*10 + col
+        img, label = dataset[n]
+        print(label, img.width, img.height) # [32, 32]
+        ax = axes[row][col]
+        ax.imshow(img)
+        ax.set_title(CLASS[label])  # ppl.title()
+        ax.axis("off")     # 不显示坐标轴
+ppl.show()
+========== p09_1.py ==========
+"""
+CIFAR10，十分类模型，本次学习内容：
+1）关于卷积神经网络，最好的电子教材之一：
+https://cloud.tencent.com/developer/article/2109487
+2）五层卷积神经网络
+3）保存和加载模型
+4) 用Dropout操作防止过拟合
+5）显示损失的滑动平均数
+6）一边训练一边验证
+"""
+import torch
+import torch as T
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
+import numpy as np
+import os
+import time
+from matplotlib import pyplot as ppl
+
+batch_size = 100
+lr = 0.001
+epochs = 2
+model_path = "p09_1_model.pth"
+moving_size = 10
+
+# 1) 样本
+ds = datasets.CIFAR10(r'../资源', True, transforms.ToTensor())
+train_dl = DataLoader(ds, batch_size=batch_size, shuffle=True)
+ds = datasets.CIFAR10(r'../资源', False, transforms.ToTensor())
+test_dl = DataLoader(ds, batch_size=10 * batch_size)
+
+# 2) 建模
+class Cifar10Model(T.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.net = T.nn.Sequential(
+            # [3, 32, 32] --> [16, 16, 16]
+            T.nn.Conv2d(3, 16, 3, 1, 1),
+            T.nn.ReLU(),
+            T.nn.MaxPool2d(2, 2),
+
+            # [16, 16, 16] --> [32, 8, 8]
+            T.nn.Conv2d(16, 32, 3, 1, 1),
+            T.nn.ReLU(),
+            T.nn.MaxPool2d(2, 2),
+
+            # [32, 8, 8] --> [64, 4, 4]
+            T.nn.Conv2d(32, 64, 3, 1, 1),
+            T.nn.ReLU(),
+            T.nn.MaxPool2d(2, 2),
+
+            # [64, 4, 4] -- > [10]
+            T.nn.Flatten(),
+            T.nn.Linear(64*4*4, 200),
+            T.nn.ReLU(),
+            T.nn.Dropout(0.5),
+            # 不用调用T.nn.Softmax()
+            T.nn.Linear(200, 10)    # 10个logits
+        )
+
+    def forward(self, x):   # x: [?, 3, 32, 32]
+        return self.net(x)  # [?, 10]
+
+model = Cifar10Model()
+optimizer = T.optim.Adam(model.parameters(), lr= lr)
+print('参数数量：', sum([p.numel() for p in model.parameters()]))
+if model_path is not None and os.path.exists(model_path):
+    try:
+        model.load_state_dict(T.load(model_path))
+    except Exception as e:
+        print(f'从{model_path}加载模型失败, 很可能模型发生了改变')
+        exit(0)
+    print(f'从{model_path}加载模型成功')
+else:
+    print('没有发现老模型')
+
+# 3) 测试
+def show_testing_acc():
+    model.eval()
+    with torch.no_grad():
+        accs = []
+        for x, y in test_dl:
+            logits = model(x)
+            accs.append(get_acc(logits, y))
+    acc = np.mean(accs)
+    print('测试精度: %.4f' % acc)
+
+def get_acc(logits, y):
+    logits = T.argmax(logits, 1)
+    return (logits == y).float().mean().numpy()
+    # return np.mean((logits == y).numpy())
+
+# 4) 训练
+loss_fn = T.nn.CrossEntropyLoss()
+total_loss, losses = [], []
+total_acc, accs = [], []
+for epoch in range(epochs):
+    model.train()
+    for batch, (x, y) in enumerate(train_dl):
+        logits = model(x)
+        loss = loss_fn(logits, y)
+
+        loss.backward()
+        optimizer.step()
+        optimizer.zero_grad()
+
+        losses.append(loss.item())
+        accs.append(get_acc(logits.detach(), y))
+        if len(losses) > moving_size:
+            losses.pop(0)
+            accs.pop(0)
+        loss = np.mean(losses)
+        acc = np.mean(accs)
+        print(f'{epoch+1}-{batch+1}: loss: {loss:.6f}, acc: {acc:.4f}')
+        total_loss.append(loss)
+        total_acc.append(acc)
+    if model_path is not None:
+        T.save(model.state_dict(), model_path)
+        print('模型保存至', model_path)
+    show_testing_acc()
+print('训练完毕')
+# 5）显示损失和准确度曲线
+_, axes = ppl.subplots(1, 2)
+axes[0].plot(total_loss)
+axes[1].plot(total_acc)
+ppl.show()
+========== p09_1_CIFAR10.py ==========
+"""
+CIFAR10，十分类模型，本次学习内容：
+1）关于卷积神经网络，最好的电子教材之一：
+https://cloud.tencent.com/developer/article/2109487
+2）五层卷积神经网络
+3）保存和加载模型
+4) 用Dropout操作防止过拟合
+5）显示损失的滑动平均数
+6）一边训练一边验证
+"""
+import torch
+import torch as T
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
+import numpy as np
+import os
+import time
+from matplotlib import pyplot as ppl
+
+batch_size = 100
+lr = 0.001
+epochs = 2
+model_path = "p09_1_model.pth"
+moving_size = 10
+
+# 1) 样本
+ds = datasets.CIFAR10(r'../资源', True, transforms.ToTensor())
+train_dl = DataLoader(ds, batch_size=batch_size, shuffle=True)
+ds = datasets.CIFAR10(r'../资源', False, transforms.ToTensor())
+test_dl = DataLoader(ds, batch_size=10 * batch_size)
+
+# 2) 建模
+class Cifar10Model(T.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.net = T.nn.Sequential(
+            # [3, 32, 32] --> [16, 16, 16]
+            T.nn.Conv2d(3, 16, 3, 1, 1),
+            T.nn.ReLU(),
+            T.nn.MaxPool2d(2, 2),
+
+            # [16, 16, 16] --> [32, 8, 8]
+            T.nn.Conv2d(16, 32, 3, 1, 1),
+            T.nn.ReLU(),
+            T.nn.MaxPool2d(2, 2),
+
+            # [32, 8, 8] --> [64, 4, 4]
+            T.nn.Conv2d(32, 64, 3, 1, 1),
+            T.nn.ReLU(),
+            T.nn.MaxPool2d(2, 2),
+
+            # [64, 4, 4] -- > [10]
+            T.nn.Flatten(),
+            T.nn.Linear(64*4*4, 200),
+            T.nn.ReLU(),
+            T.nn.Dropout(0.5),
+            # 不用调用T.nn.Softmax()
+            T.nn.Linear(200, 10)    # 10个logits
+        )
+
+    def forward(self, x):   # x: [?, 3, 32, 32]
+        return self.net(x)  # [?, 10]
+
+model = Cifar10Model()
+optimizer = T.optim.Adam(model.parameters(), lr= lr)
+print('参数数量：', sum([p.numel() for p in model.parameters()]))
+if model_path is not None and os.path.exists(model_path):
+    try:
+        model.load_state_dict(T.load(model_path))
+    except Exception as e:
+        print(f'从{model_path}加载模型失败, 很可能模型发生了改变')
+        exit(0)
+    print(f'从{model_path}加载模型成功')
+else:
+    print('没有发现老模型')
+
+# 3) 测试
+def show_testing_acc():
+    model.eval()
+    with torch.no_grad():
+        accs = []
+        for x, y in test_dl:
+            logits = model(x)
+            accs.append(get_acc(logits, y))
+    acc = np.mean(accs)
+    print('测试精度: %.4f' % acc)
+
+def get_acc(logits, y):
+    logits = T.argmax(logits, 1)
+    return (logits == y).float().mean().numpy()
+    # return np.mean((logits == y).numpy())
+
+# 4) 训练
+loss_fn = T.nn.CrossEntropyLoss()
+total_loss, losses = [], []
+total_acc, accs = [], []
+for epoch in range(epochs):
+    for batch, (x, y) in enumerate(train_dl):
+        model.train()           # 移动
+        logits = model(x)
+        loss = loss_fn(logits, y)
+
+        loss.backward()
+        optimizer.step()
+        optimizer.zero_grad()
+
+        losses.append(loss.item())
+        # accs.append(get_acc(logits.detach(), y))
+        model.eval()
+        with T.no_grad():
+            accs.append(get_acc(logits, y))     # 改动
+
+        if len(losses) > moving_size:
+            losses.pop(0)
+            accs.pop(0)
+        loss = np.mean(losses)
+        acc = np.mean(accs)
+        print(f'{epoch+1}-{batch+1}: loss: {loss:.6f}, acc: {acc:.4f}')
+        total_loss.append(loss)
+        total_acc.append(acc)
+
+    show_testing_acc()      # 移动
+    if model_path is not None:
+        T.save(model.state_dict(), model_path)
+        print('模型保存至', model_path)
+
+print('训练完毕')
+
+# 5）显示损失和准确度曲线
+_, axes = ppl.subplots(1, 2)
+axes[0].plot(total_loss)
+axes[1].plot(total_acc)
+ppl.show()
+========== p09_2.py ==========
+"""
+p092_CIFAR10_GPU，本次学习内容：
+1) 16 features --> 32 features
+2）批正则化BatchNorm
+3）样本转换，transforms
+4) eval()和no_grad()， 以及train(), 与Dropout, BatchNorm的关系
+"""
+import torch
+import torch as T
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
+import numpy as np
+import os
+import time
+from matplotlib import pyplot as ppl
+
+batch_size = 100
+lr = 0.001
+epochs = 2
+model_path = "p09_2_model.pth"
+moving_size = 10
+
+# 1) 样本
+transform = transforms.Compose([
+    transforms.RandomCrop(32, 4),
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor()
+])
+
+ds = datasets.CIFAR10(r'../资源', True, transform)
+train_dl = DataLoader(ds, batch_size=batch_size, shuffle=True)
+ds = datasets.CIFAR10(r'../资源', False, transforms.ToTensor())
+test_dl = DataLoader(ds, batch_size=10 * batch_size)
+
+# 2) 建模
+class Cifar10Model(T.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.net = T.nn.Sequential(
+            T.nn.BatchNorm2d(3),
+
+            # [3, 32, 32] --> [32, 16, 16]
+            T.nn.Conv2d(3, 32, 3, 1, 1),
+            T.nn.BatchNorm2d(32),
+            T.nn.ReLU(),
+            T.nn.MaxPool2d(2, 2),
+
+            # [32, 16, 16] --> [64, 8, 8]
+            T.nn.Conv2d(32, 64, 3, 1, 1),
+            T.nn.BatchNorm2d(64),
+            T.nn.ReLU(),
+            T.nn.MaxPool2d(2, 2),
+
+            # [64, 8, 8] --> [128, 4, 4]
+            T.nn.Conv2d(64, 128, 3, 1, 1),
+            T.nn.BatchNorm2d(128),
+            T.nn.ReLU(),
+            T.nn.MaxPool2d(2, 2),
+
+            # [128, 4, 4] -- > [10]
+            T.nn.Flatten(),
+            T.nn.Linear(128*4*4, 200),
+            T.nn.BatchNorm1d(200),
+            T.nn.ReLU(),
+            T.nn.Dropout(0.5),
+            # 不用调用T.nn.Softmax()
+            T.nn.Linear(200, 10)    # 10个logits
+        )
+
+    def forward(self, x):   # x: [?, 3, 32, 32]
+        return self.net(x)  # [?, 10]
+
+model = Cifar10Model()
+optimizer = T.optim.Adam(model.parameters(), lr= lr)
+print('参数数量：', sum([p.numel() for p in model.parameters()]))
+if model_path is not None and os.path.exists(model_path):
+    try:
+        model.load_state_dict(T.load(model_path))
+    except Exception as e:
+        print(f'从{model_path}加载模型失败, 很可能模型发生了改变')
+        exit(0)
+    print(f'从{model_path}加载模型成功')
+else:
+    print('没有发现老模型')
+
+# 3) 测试
+def show_testing_acc():
+    model.eval()
+    with torch.no_grad():
+        accs = []
+        for x, y in test_dl:
+            logits = model(x)
+            accs.append(get_acc(logits, y))
+    acc = np.mean(accs)
+    print('测试精度: %.4f' % acc)
+
+def get_acc(logits, y):
+    logits = T.argmax(logits, 1)
+    return (logits == y).float().mean().numpy()
+    # return np.mean((logits == y).numpy())
+
+# 4) 训练
+loss_fn = T.nn.CrossEntropyLoss()
+total_loss, losses = [], []
+total_acc, accs = [], []
+for epoch in range(epochs):
+    for batch, (x, y) in enumerate(train_dl):
+        model.train()
+        logits = model(x)
+        loss = loss_fn(logits, y)
+
+        loss.backward()
+        optimizer.step()
+        optimizer.zero_grad()
+
+        model.eval()
+        with T.no_grad():
+            losses.append(loss.item())
+            accs.append(get_acc(logits, y))
+            if len(losses) > moving_size:
+                losses.pop(0)
+                accs.pop(0)
+            loss = np.mean(losses)
+            acc = np.mean(accs)
+            print(f'{epoch+1}-{batch+1}: loss: {loss:.6f}, acc: {acc:.4f}')
+            total_loss.append(loss)
+            total_acc.append(acc)
+    if model_path is not None:
+        T.save(model.state_dict(), model_path)
+        print('模型保存至', model_path)
+    show_testing_acc()
+print('训练完毕')
+# 5）显示损失和准确度曲线
+_, axes = ppl.subplots(1, 2)
+axes[0].plot(total_loss)
+axes[1].plot(total_acc)
+ppl.show()
+========== p09_2_CIFAR10_鎵规鍒欏寲.py ==========
+"""
+p092_CIFAR10_GPU，本次学习内容：
+1) eval()和no_grad()， 以及与Dropout()的关系
+2）批正则化BatchNorm
+"""
+import torch
+import torch as T
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
+import numpy as np
+import os
+import time
+# from matplotlib import pyplot as ppl
+
+batch_size = 100
+lr = 0.001
+epochs = 2000
+model_path = "p09_3_gpu_model.pth"
+moving_size = 10
+print_size = 40
+resource_path = '.'
+
+# 1) 样本
+ds = datasets.CIFAR10(resource_path, True, transforms.ToTensor())
+train_dl = DataLoader(ds, batch_size=batch_size, shuffle=True)
+ds = datasets.CIFAR10(resource_path, False, transforms.ToTensor())
+test_dl = DataLoader(ds, batch_size=10 * batch_size)
+
+# 2) 建模
+class Cifar10Model(T.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.net = T.nn.Sequential(
+            # [3, 32, 32] --> [16, 16, 16]
+            T.nn.Conv2d(3, 16, 3, 1, 1),
+            T.nn.BatchNorm2d(16),
+            T.nn.ReLU(),
+            T.nn.MaxPool2d(2, 2),
+
+            # [16, 16, 16] --> [32, 8, 8]
+            T.nn.Conv2d(16, 32, 3, 1, 1),
+            T.nn.BatchNorm2d(32),
+            T.nn.ReLU(),
+            T.nn.MaxPool2d(2, 2),
+
+            # [32, 8, 8] --> [64, 4, 4]
+            T.nn.Conv2d(32, 64, 3, 1, 1),
+            T.nn.BatchNorm2d(64),
+            T.nn.ReLU(),
+            T.nn.Dropout(0.5),                      #
+            T.nn.MaxPool2d(2, 2),
+
+            # [64, 4, 4] -- > [10]
+            T.nn.Flatten(),
+            T.nn.Linear(64*4*4, 512),    # 增加了一层Linear
+            T.nn.BatchNorm1d(512),
+            T.nn.ReLU(),
+            # 不用调用T.nn.Softmax()
+            T.nn.Linear(512, 10)    # 10个logits
+        )
+
+    def forward(self, x):   # x: [?, 3, 32, 32]
+        return self.net(x)  # [?, 10]
+
+model = Cifar10Model()
+optimizer = T.optim.Adam(model.parameters(), lr= lr)
+print('参数数量：', sum([p.numel() for p in model.parameters()]))
+if model_path is not None and os.path.exists(model_path):
+    try:
+        model.load_state_dict(T.load(model_path, weights_only=True))
+    except Exception as e:
+        print(f'从{model_path}加载模型失败, 很可能模型发生了改变')
+        exit(0)
+    print(f'从{model_path}加载模型成功')
+else:
+    print('没有发现老模型')
+
+# 3) 测试
+def show_testing_acc(device):
+    model.eval()
+    with torch.no_grad():
+        accs = []
+        for x, y in test_dl:
+            x = x.to(device)
+            y = y.to(device)
+            logits = model(x)
+            accs.append(get_acc(logits, y))
+    acc = np.mean(accs)
+    print('测试精度: %.4f' % acc)
+
+def get_acc(logits, y):
+    logits = T.argmax(logits, 1)
+    return np.mean((logits == y).cpu().numpy())
+
+# 4) 训练
+loss_fn = T.nn.CrossEntropyLoss()
+total_loss, losses = [], []
+total_acc, accs = [], []
+
+device = 'cuda' if T.cuda.is_available() else 'cpu'
+model = model.to(device)
+
+for epoch in range(epochs):
+    for batch, (x, y) in enumerate(train_dl):
+        x = x.to(device)
+        y = y.to(device)
+        model.train()           # 移动
+        logits = model(x)
+        loss = loss_fn(logits, y)
+
+        loss.backward()
+        optimizer.step()
+        optimizer.zero_grad()
+
+        model.eval()
+        with T.no_grad():
+            losses.append(loss.cpu().item())
+            accs.append(get_acc(logits, y))     # 改动
+
+            if len(losses) > moving_size:
+                losses.pop(0)
+                accs.pop(0)
+            loss = np.mean(losses)
+            acc = np.mean(accs)
+            if (batch+1) % print_size == 0:
+                print(f'{epoch+1}-{batch+1}: loss: {loss:.6f}, acc: {acc:.4f}')
+            total_loss.append(loss)
+            total_acc.append(acc)
+
+    show_testing_acc(device)      # 移动
+    if model_path is not None:
+        T.save(model.state_dict(), model_path)
+        print('模型保存至', model_path)
+
+print('训练完毕')
+
+# 5）显示损失和准确度曲线
+_, axes = ppl.subplots(1, 2)
+axes[0].plot(total_loss)
+axes[1].plot(total_acc)
+ppl.show()
+========== p09_3.py ==========
+"""
+p093_CIFAR10_GPU，本次学习内容：
+1）使用GPU
+2）矩池云使用指南，http://www.matpool.com
+"""
+import torch
+import torch as T
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
+import numpy as np
+import os
+import time
+# from matplotlib import pyplot as ppl
+
+batch_size = 100
+lr = 0.001
+epochs = 2
+model_path = "p093_model.pth"
+moving_size = 10
+
+# 1) 样本
+transform = transforms.Compose([
+    transforms.RandomCrop(32, 4),
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor()
+])
+
+ds = datasets.CIFAR10(r'../资源', True, transform, download=True)
+train_dl = DataLoader(ds, batch_size=batch_size, shuffle=True)
+ds = datasets.CIFAR10(r'../资源', False, transforms.ToTensor())
+test_dl = DataLoader(ds, batch_size=10 * batch_size)
+
+# 2) 建模
+class Cifar10Model(T.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.net = T.nn.Sequential(
+            T.nn.BatchNorm2d(3),
+
+            # [3, 32, 32] --> [32, 16, 16]
+            T.nn.Conv2d(3, 32, 3, 1, 1),
+            T.nn.BatchNorm2d(32),
+            T.nn.ReLU(),
+            T.nn.MaxPool2d(2, 2),
+
+            # [32, 16, 16] --> [64, 8, 8]
+            T.nn.Conv2d(32, 64, 3, 1, 1),
+            T.nn.BatchNorm2d(64),
+            T.nn.ReLU(),
+            T.nn.MaxPool2d(2, 2),
+
+            # [64, 8, 8] --> [128, 4, 4]
+            T.nn.Conv2d(64, 128, 3, 1, 1),
+            T.nn.BatchNorm2d(128),
+            T.nn.ReLU(),
+            T.nn.MaxPool2d(2, 2),
+
+            # [128, 4, 4] -- > [10]
+            T.nn.Flatten(),
+            T.nn.Linear(128*4*4, 200),
+            T.nn.BatchNorm1d(200),
+            T.nn.ReLU(),
+            T.nn.Dropout(0.5),
+            # 不用调用T.nn.Softmax()
+            T.nn.Linear(200, 10)    # 10个logits
+        )
+
+    def forward(self, x):   # x: [?, 3, 32, 32]
+        return self.net(x)  # [?, 10]
+
+model = Cifar10Model()
+optimizer = T.optim.Adam(model.parameters(), lr= lr)
+print('参数数量：', sum([p.numel() for p in model.parameters()]))
+if model_path is not None and os.path.exists(model_path):
+    try:
+        model.load_state_dict(T.load(model_path))
+    except Exception as e:
+        print(f'从{model_path}加载模型失败, 很可能模型发生了改变')
+        exit(0)
+    print(f'从{model_path}加载模型成功')
+else:
+    print('没有发现老模型')
+
+# 3) 测试
+def show_testing_acc():
+    model.eval()
+    with torch.no_grad():
+        accs = []
+        for x, y in test_dl:
+            x = x.to(device)
+            y = y.to(device)
+            logits = model(x)
+            accs.append(get_acc(logits, y))
+    acc = np.mean(accs)
+    print('测试精度: %.4f' % acc)
+
+def get_acc(logits, y):
+    logits = T.argmax(logits, 1)
+    return (logits == y).float().mean().cpu().numpy()
+    # return np.mean((logits == y).cpu().numpy())
+
+# 4) 训练
+loss_fn = T.nn.CrossEntropyLoss()
+total_loss, losses = [], []
+total_acc, accs = [], []
+
+device = 'cuda' if T.cuda.is_available() else 'cpu'
+model = model.to(device)
+loss_fn = loss_fn.to(device)
+for epoch in range(epochs):
+    for batch, (x, y) in enumerate(train_dl):
+        model.train()
+        x = x.to(device)
+        y = y.to(device)
+        logits = model(x)
+        loss = loss_fn(logits, y)
+
+        loss.backward()
+        optimizer.step()
+        optimizer.zero_grad()
+
+        model.eval()
+        with T.no_grad():
+            losses.append(loss.cpu().item())
+            accs.append(get_acc(logits, y))
+            if len(losses) > moving_size:
+                losses.pop(0)
+                accs.pop(0)
+            loss = np.mean(losses)
+            acc = np.mean(accs)
+            print(f'{epoch+1}-{batch+1} {device}: loss: {loss:.6f}, acc: {acc:.4f}')
+            total_loss.append(loss)
+            total_acc.append(acc)
+    if model_path is not None:
+        T.save(model.state_dict(), model_path)
+        print('模型保存至', model_path)
+    show_testing_acc()
+print('训练完毕')
+# 5）显示损失和准确度曲线
+# _, axes = ppl.subplots(1, 2)
+# axes[0].plot(total_loss)
+# axes[1].plot(total_acc)
+# ppl.show()
+np.save('total_loss.npy', total_loss)
+np.save('total_acc.npy', total_acc)
+========== p09_3_CIFAR10_GPU.py ==========
+"""
+p093_CIFAR10_GPU，本次学习内容：
+1）样本变形
+2）使用GPU
+3）矩池云使用指南，http://www.matpool.com
+"""
+import torch
+import torch as T
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
+import numpy as np
+import os
+import time
+# from matplotlib import pyplot as ppl
+
+batch_size = 1000
+lr = 0.001
+epochs = 200
+model_path = "p09_3_gpu_model.pth"
+moving_size = 10
+print_size = 10
+resource_path = '.'
+
+# 1) 样本
+transform = transforms.Compose([
+    transforms.RandomCrop(32, padding=4),  # 补边4，之后随机剪裁成32*32
+    transforms.RandomHorizontalFlip(),          # 随机水平翻转
+    transforms.ToTensor()                       # 转为张量
+])
+ds = datasets.CIFAR10(resource_path, True, transform)
+train_dl = DataLoader(ds, batch_size=batch_size, shuffle=True)
+ds = datasets.CIFAR10(resource_path, False, transforms.ToTensor())
+test_dl = DataLoader(ds, batch_size=10 * batch_size)
+
+# 2) 建模
+class Cifar10Model(T.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.net = T.nn.Sequential(
+            T.nn.BatchNorm2d(3),        # 在3个颜色上分别进行批正则化
+
+            # [3, 32, 32] --> [32, 16, 16]，彩色图的第一个卷积通常输出32个通道
+            T.nn.Conv2d(3, 32, 3, 1, 1),
+            T.nn.BatchNorm2d(32),       # BatchNorm操作通常位于卷积之后，激活之前
+            T.nn.ReLU(),
+            T.nn.MaxPool2d(2, 2),
+
+            # [32, 16, 16] --> [64, 8, 8]
+            T.nn.Conv2d(32, 64, 3, 1, 1),
+            T.nn.BatchNorm2d(64),
+            T.nn.ReLU(),
+            T.nn.MaxPool2d(2, 2),
+
+            # [64, 8, 8] --> [128, 4, 4]
+            T.nn.Conv2d(64, 128, 3, 1, 1),
+            T.nn.BatchNorm2d(128),
+            T.nn.ReLU(),
+            T.nn.Dropout(0.7),                      #
+            T.nn.MaxPool2d(2, 2),
+
+            # [128, 4, 4] --> [512] --> [10]
+            T.nn.Flatten(),
+            T.nn.Linear(128*4*4, 400),    # 增加了一层Linear
+            T.nn.BatchNorm1d(400),
+            T.nn.ReLU(),
+            # 不用调用T.nn.Softmax()
+            T.nn.Linear(400, 10)    # 10个logits
+        )
+
+    def forward(self, x):   # x: [?, 3, 32, 32]
+        return self.net(x)  # [?, 10]
+
+model = Cifar10Model()
+optimizer = T.optim.Adam(model.parameters(), lr= lr)
+print('参数数量：', sum([p.numel() for p in model.parameters()]))
+if model_path is not None and os.path.exists(model_path):
+    try:
+        model.load_state_dict(T.load(model_path, weights_only=True))
+    except Exception as e:
+        print(f'从{model_path}加载模型失败, 很可能模型发生了改变')
+        exit(0)
+    print(f'从{model_path}加载模型成功')
+else:
+    print('没有发现老模型')
+
+# 3) 测试
+def show_testing_acc(device):
+    model.eval()
+    with torch.no_grad():
+        accs = []
+        for x, y in test_dl:
+            x = x.to(device)
+            y = y.to(device)
+            logits = model(x)
+            accs.append(get_acc(logits, y))
+    acc = np.mean(accs)
+    print('测试精度: %.4f' % acc)
+
+def get_acc(logits, y):
+    logits = T.argmax(logits, 1)
+    return np.mean((logits == y).cpu().numpy())
+
+# 4) 训练
+loss_fn = T.nn.CrossEntropyLoss()
+total_loss, losses = [], []
+total_acc, accs = [], []
+
+device = 'cuda' if T.cuda.is_available() else 'cpu'
+model = model.to(device)
+
+for epoch in range(epochs):
+    for batch, (x, y) in enumerate(train_dl):
+        x = x.to(device)
+        y = y.to(device)
+        model.train()           # 移动
+        logits = model(x)
+        loss = loss_fn(logits, y)
+
+        loss.backward()
+        optimizer.step()
+        optimizer.zero_grad()
+
+        model.eval()          # 新增
+        with T.no_grad():
+            losses.append(loss.cpu().item())
+            accs.append(get_acc(logits, y))
+
+            if len(losses) > moving_size:
+                losses.pop(0)
+                accs.pop(0)
+            loss = np.mean(losses)
+            acc = np.mean(accs)
+            if (batch+1) % print_size == 0:
+                print(f'{epoch+1}-{batch+1}: loss: {loss:.6f}, acc: {acc:.6f}')
+            total_loss.append(loss)
+            total_acc.append(acc)
+
+    show_testing_acc(device)      # 移动
+    if model_path is not None:
+        T.save(model.state_dict(), model_path)
+        print('模型保存至', model_path)
+
+print('训练完毕')
+np.save('total_loss', np.array(total_loss))
+np.save('total_acc', np.array(total_acc))
+# 5）显示损失和准确度曲线
+# _, axes = ppl.subplots(1, 2)
+# axes[0].plot(total_loss)
+# axes[1].plot(total_acc)
+# ppl.show()
+========== p10_0_Mnist_鍙嶅嵎绉痏VAE.py ==========
+"""
+MNIST手写数字生成
+"""
+from torchvision import datasets as ds, transforms as ts
+from torch.utils.data import DataLoader
+import torch as T
+import numpy as np
+import os
+import matplotlib.pyplot as ppl
+
+batch_size = 100
+lr = 0.01
+epochs = 20
+model_path = 'p10_0_model.pth'
+losses_size = 10
+
+# 1. 准备样本
+tr = ts.Compose([
+    ts.RandomAffine(10, (1/7, 1/7), (0.9, 1.1)),
+    ts.ToTensor()
+])
+
+dataset = ds.MNIST(root=r'../资源/', train=True, download=True,
+                         transform=tr)
+dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+
+# 2. 建模
+class MnistModel(T.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.encode = T.nn.Sequential(
+            # [1, 28, 28] --> [32, 28, 28]
+            T.nn.BatchNorm2d(1),
+            T.nn.Conv2d(1, 32, 3, 1, 1),
+            T.nn.ReLU(),
+            # T.nn.MaxPool2d(2, 2),
+
+            # [32, 28, 28] --> [64, 14, 14]
+            T.nn.BatchNorm2d(32),
+            T.nn.Conv2d(32, 64, 3, 1, 1),
+            T.nn.ReLU(),
+            T.nn.MaxPool2d(2, 2),
+
+            # [64, 14, 14] --> [128, 7, 7]
+            T.nn.BatchNorm2d(64),
+            T.nn.Conv2d(64, 128, 3, 1, 1),
+            T.nn.ReLU(),
+            T.nn.MaxPool2d(2, 2),
+
+            # [128, 7, 7] --> [4, 1, 1]
+            T.nn.BatchNorm2d(128),
+            T.nn.Conv2d(128, 4, 7, 1),
+
+            T.nn.BatchNorm2d(4, affine=False),
+            T.nn.Flatten()
+        )
+
+        self.decode = T.nn.Sequential(
+            # [4, 1, 1] --> [16, 7, 7]
+            T.nn.Linear(4, 128*7*7),
+            T.nn.Unflatten(1, [128, 7, 7]),
+            T.nn.ReLU(),
+
+            # [128, 7, 7] --> [64, 14, 14]
+            T.nn.BatchNorm2d(128),
+            T.nn.ConvTranspose2d(128, 64, 4, 2, 1),
+            T.nn.ReLU(),
+
+            # [64, 14, 14] --> [32, 28, 28]
+            T.nn.BatchNorm2d(64),
+            T.nn.ConvTranspose2d(64, 32, 4, 2, 1),
+            T.nn.ReLU(),
+
+            # [32, 28, 28] --> [1, 28, 28]
+            T.nn.BatchNorm2d(32),
+            T.nn.Conv2d(32, 1, 3, 1, 1),
+            T.nn.Sigmoid()
+        )
+
+    def forward(self, x):  # [?, 1, 28, 28]
+        y = self.encode(x)  # [?, 4] 语义向量
+        y = self.decode(y)
+        return y
+
+model = MnistModel()
+if os.path.exists(model_path):
+    try:
+        model.load_state_dict(T.load(model_path, weights_only=True))
+    except:
+        print(f'从{model_path}加载模型失败, 很可能是因为模型发生了改变')
+        exit(0)
+else:
+    print(f'未发现模型{model_path}')
+
+def train():
+    optimier = T.optim.Adam(model.parameters(), lr=lr)
+    loss_fn = T.nn.BCELoss()
+
+    # 3. 训练
+    losses = []
+    for epoch in range(epochs):
+        for batch, (x, _) in enumerate(dataloader):
+            model.train()
+            # x: [?, 1, 28, 28], y: [?, 1, 28, 28]
+            # print('x min, max=', np.max(x.numpy()))
+            y = model(x)
+            loss = loss_fn(y, x)
+
+            loss.backward()
+            optimier.step()
+            optimier.zero_grad()
+
+            model.eval()
+            with T.no_grad():
+                losses.append(loss.item())
+                loss = np.mean(losses)
+                if (batch+1) % losses_size == 0:
+                    print(f"epoch: {epoch+1}.{batch+1}, loss: {loss:.6f}")
+                    losses.clear()
+        T.save(model.state_dict(), model_path)
+        print(f'保存模型{model_path}')
+    print("训练完毕！")
+
+# 4. 测试
+def _test():
+    vec = np.random.normal(size=(20, 4))
+    vec = T.from_numpy(np.float32(vec))
+    model.eval()
+    with T.no_grad():
+        imgs = model.decode(vec)    # [20, 1, 28, 28]
+        imgs = imgs.numpy()
+        imgs = np.reshape(imgs, [20, 28, 28])
+        imgs = np.uint8(imgs*255)
+    for i, img in enumerate(imgs):
+        ppl.subplot(4, 5, i+1)
+        ppl.imshow(img)
+        ppl.axis('off')
+    ppl.show()
+
+if __name__ == '__main__':
+    # _test()
+    train()
+========== p10_0_涓€浜岀彮.py ==========
+"""
+MNIST手写数字生成模型
+关于卷积神经网络，最好的电子教材之一：
+https://cloud.tencent.com/developer/article/2109487
+"""
+from torchvision import datasets as ds, transforms as ts
+from torch.utils.data import DataLoader
+import torch
+import numpy as np
+
+import matplotlib.pyplot as ppl
+import os
+
+batch_size = 100
+lr = 0.001
+epochs = 20
+model_path = "p10_0_.pth"
+losses_size = 10
+
+# 1. 准备样本
+tr = ts.Compose([
+    ts.RandomAffine(0, (0.05, 0.05)),
+    ts.ToTensor()
+])
+dataset = ds.MNIST(root=r'../资源/', train=True, download=True,
+                         transform=tr)
+dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+
+# 2. 建模
+class MnistModel(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.encode = torch.nn.Sequential(
+            # [1, 28, 28] --> [8, 14, 14]
+            torch.nn.BatchNorm2d(1),
+            torch.nn.Conv2d(1, 8, 3, 1, 1),
+            torch.nn.ReLU(),
+            torch.nn.MaxPool2d(2, 2),
+
+            # [8, 14, 14] --> [16, 7, 7]
+            torch.nn.BatchNorm2d(8),
+            torch.nn.Conv2d(8, 16, 3, 1, 1),
+            torch.nn.ReLU(),
+            torch.nn.MaxPool2d(2, 2),
+
+            # [16, 7, 7] --> [4]
+            torch.nn.BatchNorm2d(16),
+            torch.nn.Conv2d(16, 8,7, 7, 1),
+
+            torch.nn.BatchNorm2d(8, affine=False),
+            torch.nn.Flatten()
+        )
+
+        self.decode = torch.nn.Sequential(
+            # [4] --> [16, 7, 7]
+            torch.nn.Linear(8, 16*7*7),
+            torch.nn.Unflatten(1, [16, 7, 7]),
+            torch.nn.ReLU(),
+            # [16, 7, 7] --> [8, 14, 14]
+            torch.nn.BatchNorm2d(16),
+            torch.nn.ConvTranspose2d(16, 8, 4, 2, 1),
+            torch.nn.ReLU(),
+            # [8, 14, 14] --> [1, 28, 28]
+            torch.nn.BatchNorm2d(8),
+            torch.nn.ConvTranspose2d(8, 1, 4, 2, 1),
+            torch.nn.Sigmoid()
+        )
+
+    def forward(self, x):  # [?, 1, 28, 28]
+        p = self.encode(x)  # [?, 4]
+        p = self.decode(p)  # [?, 1, 28, 28]
+        return p
+
+model = MnistModel()
+if os.path.exists(model_path):
+    try:
+        model.load_state_dict(torch.load(model_path, weights_only=True))
+    except:
+        print(f'从{model_path}加载模型失败，很可能是模型结构发生了改变')
+        exit(0)
+else:
+    print(f'未发现模型{model_path}')
+
+def train():
+    optimier = torch.optim.Adam(model.parameters(), lr=lr)
+    loss_fn = torch.nn.MSELoss()
+
+    # 3. 训练
+    losses = []
+    for epoch in range(epochs):
+        for batch, (x, _) in enumerate(dataloader):
+            model.train()
+            # x: [?, 1, 28, 28], y: [?]
+            p = model(x)
+            # 不需要对logits调用softmax函数，不需要把y转为独热向量
+            loss = loss_fn(p, x)
+
+            loss.backward()
+            optimier.step()
+            optimier.zero_grad()
+
+            model.eval()
+            with torch.no_grad():
+                losses.append(loss.item())
+                if (batch + 1) % losses_size == 0:
+                    loss = np.mean(losses)
+                    print(f"epoch: {epoch+1}.{batch+1}, loss: {loss:.6f}")
+        torch.save(model.state_dict(), model_path)
+        print(f'保存模型至{model_path}')
+    print("训练完毕！")
+
+# 4. 测试
+# train()
+
+vectors = np.float32(np.random.normal(size=[20, 8]))
+vectors = torch.from_numpy(vectors)
+model.eval()
+with torch.no_grad():
+    ps = model.decode(vectors)
+    ps = ps.numpy()     # [20, 1, 28, 28]
+    ps = ps.reshape([20, 28, 28])
+for i, p in enumerate(ps):
+    ppl.subplot(4, 5, i+1)
+    p = np.uint8(p * 255)
+    ppl.imshow(p)
+    ppl.axis('off')
+ppl.show()
+
+import cv2  # opencv-python
+ps = np.uint8(ps * 255) # [20, 28, 28]
+ps = np.reshape(ps, [4, 5, 28, 28])
+ps = np.transpose(ps, [0, 2, 1, 3]) # [4, 28, 5, 28]
+ps = np.reshape(ps, [4*28, 5*28])
+cv2.imshow('AAA', ps)
+cv2.waitKey()
+cv2.destroyAllWindows()
+========== p11_0_Mnist_CVAE.py ==========
+"""
+MNIST手写数字生成
+"""
+from torchvision import datasets as ds, transforms as ts
+from torch.utils.data import DataLoader
+import torch as T
+import numpy as np
+import os
+import matplotlib.pyplot as ppl
+
+batch_size = 100
+lr = 0.01
+epochs = 20
+model_path = 'p11_0_model.pth'
+losses_size = 10
+
+# 1. 准备样本
+tr = ts.Compose([
+    ts.RandomAffine(10, (1/7, 1/7), (0.9, 1.1)),
+    ts.ToTensor()
+])
+
+dataset = ds.MNIST(root=r'../资源/', train=True, download=True,
+                         transform=tr)
+dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+
+# 2. 建模
+class MyConv(T.nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size, stride, padding, pool_size):
+        super().__init__()
+        self.net = T.nn.Sequential(
+            T.nn.BatchNorm2d(in_channels),
+            T.nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding),
+            T.nn.ReLU(),
+            T.nn.MaxPool2d(pool_size, pool_size),
+        )
+
+    def forward(self, x):
+        return self.net(x)
+
+class Merge(T.nn.Module):
+    def __init__(self, shape, y_size):
+        super().__init__()
+        t_size = np.prod(shape)
+        self.net = T.nn.Sequential(
+            T.nn.Linear(y_size, t_size),
+            T.nn.Unflatten(1, shape)
+        )
+    def forward(self, p, y_onehot):
+        y = self.net(y_onehot)
+        return y + p
+
+
+class MnistModel(T.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.encode = T.nn.Sequential(
+            # [1, 28, 28] --> [32, 28, 28]
+            MyConv(1, 32, 3, 1, 1, 1),
+            # [32, 28, 28] --> [64, 14, 14]
+            MyConv(32, 64, 3, 1, 1, 2),
+            # [64, 14, 14] --> [128, 7, 7]
+            MyConv(64, 128, 3, 1, 1, 2),
+            # [64, 7, 7] --> [4, 1, 1]
+            T.nn.BatchNorm2d(128),
+            T.nn.Conv2d(128, 4, 7, 1),
+
+            T.nn.BatchNorm2d(4, affine=False),
+            T.nn.Flatten()
+        )
+
+        self.merge0 = Merge([4], 10)
+        self.decode1 = T.nn.Sequential(
+            # [4, 1, 1] --> [64, 7, 7]
+            T.nn.Linear(4, 64*7*7),
+            T.nn.Unflatten(1, [64, 7, 7]),
+            T.nn.ReLU()
+        )
+        self.merge1 = Merge([64, 7, 7], 10)
+        self.decode2 = T.nn.Sequential(
+            # [64, 7, 7] --> [32, 14, 14]
+            T.nn.BatchNorm2d(64),
+            T.nn.ConvTranspose2d(64, 32, 4, 2, 1),
+            T.nn.ReLU()
+        )
+        self.merge2 = Merge([32, 14, 14], 10)
+        self.decode3 = T.nn.Sequential(
+            # [32, 14, 14] --> [1, 28, 28]
+            T.nn.BatchNorm2d(32),
+            T.nn.ConvTranspose2d(32, 1, 4, 2, 1)
+        )
+        self.merge3 = Merge([1, 28, 28], 10)
+        self.sigmoid = T.nn.Sigmoid()
+
+    def forward(self, x, y):
+        # x: [?, 1, 28, 28]
+        # y: [?, 10]
+        p = self.encode(x)  # [?, 4] 语义向量
+        p = self.decode(p, y)
+        return p
+
+    def decode(self, p, y):
+        y = T.nn.functional.one_hot(y, 10)
+        y = y.float()
+        p = self.merge0(p, y)
+        p = self.decode1(p)
+        p = self.merge1(p, y)
+        p = self.decode2(p)
+        p = self.merge2(p, y)
+        p = self.decode3(p)
+        p = self.merge3(p, y)
+        p = self.sigmoid(p)
+        return p
+
+
+def get_model():
+    model = MnistModel()
+    model = model.to(device)
+    if os.path.exists(model_path):
+        try:
+            model.load_state_dict(T.load(model_path, weights_only=True, map_location=device))
+        except:
+            print(f'从{model_path}加载模型失败, 很可能是因为模型发生了改变')
+            exit(0)
+    else:
+        print(f'未发现模型{model_path}')
+    return model
+
+def train():
+    model = get_model()
+    optimier = T.optim.Adam(model.parameters(), lr=lr)
+    loss_fn = T.nn.MSELoss().to(device)
+
+    # 3. 训练
+    losses = []
+    for epoch in range(epochs):
+        for batch, (x, y) in enumerate(dataloader):
+            x = x.to(device)
+            y = y.to(device)
+            model.train()
+            # x: [?, 1, 28, 28], y: [?, 1, 28, 28]
+            # print('x min, max=', np.max(x.numpy()))
+            p = model(x, y)
+            loss = loss_fn(p, x)
+
+            loss.backward()
+            optimier.step()
+            optimier.zero_grad()
+
+            model.eval()
+            with T.no_grad():
+                losses.append(loss.cpu().item())
+                loss = np.mean(losses)
+                if (batch+1) % losses_size == 0:
+                    print(f"epoch: {epoch+1}.{batch+1}, loss: {loss:.6f}")
+                    losses.clear()
+        T.save(model.state_dict(), model_path)
+        print(f'保存模型{model_path}')
+    print("训练完毕！")
+
+# 4. 测试
+def _test():
+    model = get_model()
+    num = 10
+    vec = np.random.normal(size=(10, 4))
+    vec = T.from_numpy(np.float32(vec)).to(device)
+    y = np.arange(10, dtype=np.int32)
+    y = T.from_numpy(y).long().to(device)
+    model.eval()
+    with T.no_grad():
+        imgs = model.decode(vec, y)    # [10, 1, 28, 28]
+        imgs = imgs.cpu().numpy()
+        imgs = np.reshape(imgs, [10, 28, 28])
+        imgs = np.uint8(imgs*255)
+    for i, img in enumerate(imgs):
+        ppl.subplot(2, 5, i+1)
+        ppl.imshow(img)
+        ppl.axis('off')
+    ppl.show()
+
+if __name__ == '__main__':
+    device = 'cuda:0' if T.cuda.is_available() else 'cpu'
+    print('device:', device)
+    # train()
+    _test()
+========== p11_0_鎸囧畾鐢熸垚鏁板瓧_涓€浜岀彮.py ==========
+"""
+MNIST指定手写数字生成模型，使用Conditional VAE
+关于卷积神经网络，最好的电子教材之一：
+https://cloud.tencent.com/developer/article/2109487
+"""
+from torchvision import datasets as ds, transforms as ts
+from torch.utils.data import DataLoader
+import torch
+import numpy as np
+
+import matplotlib.pyplot as ppl
+import os
+import cv2   # opencv-python
+
+batch_size = 100
+lr = 0.01
+epochs = 2
+model_path = "p11_0_指定生成数字_一二班.pth"
+losses_size = 10
+
+# 1. 准备样本
+tr = ts.Compose([
+    ts.RandomAffine(0, (0.05, 0.05), (1, 1)),
+    ts.ToTensor()
+])
+dataset = ds.MNIST(root=r'../资源/', train=True, download=True,
+                         transform=tr)
+dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+
+# 2. 建模
+class MyConv(torch.nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size, stride, padding, pool_size):
+        super().__init__()
+        self.net = torch.nn.Sequential(
+            torch.nn.BatchNorm2d(in_channels),
+            torch.nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding),
+            torch.nn.ReLU(),
+            torch.nn.MaxPool2d(pool_size, pool_size),
+        )
+    def forward(self, x):  # x: [?, c, h, w]
+        return self.net(x)
+
+class Merge(torch.nn.Module):
+    def __init__(self, shape, size):
+        super().__init__()
+        total = np.prod(shape)
+        self.net = torch.nn.Sequential(
+            torch.nn.Linear(size, total),
+            torch.nn.Unflatten(1, shape)
+        )
+
+    def forward(self, x, y_onehot):
+        y = self.net(y_onehot)
+        return x + y
+
+class MnistModel(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.encode = torch.nn.Sequential(
+            # [1, 28, 28] --> [8, 14, 14]
+            MyConv(1, 8, 3, 1, 1, 2),
+            # [8, 14, 14] --> [16, 7, 7]
+            MyConv(8, 16, 3, 1, 1, 2),
+            # [16, 7, 7] --> [4]
+            torch.nn.BatchNorm2d(16),
+            torch.nn.Conv2d(16, 4,7, 7, 1),
+
+            torch.nn.BatchNorm2d(4, affine=False),
+            torch.nn.Flatten()
+        )
+        self.merge0 = Merge([4], 10)
+        self.decode1 = torch.nn.Sequential(
+            # [4] --> [16, 7, 7]
+            torch.nn.Linear(4, 16*7*7),
+            torch.nn.Unflatten(1, [16, 7, 7]),
+            torch.nn.ReLU()
+        )
+        self.merge1 = Merge([16, 7, 7], 10)
+
+        self.decode2 = torch.nn.Sequential(
+            # [16, 7, 7] --> [8, 14, 14]
+            torch.nn.BatchNorm2d(16),
+            torch.nn.ConvTranspose2d(16, 8, 4, 2, 1),
+            torch.nn.ReLU()
+        )
+        self.merge2 = Merge([8, 14, 14], 10)
+
+        self.decode3 = torch.nn.Sequential(
+            # [8, 14, 14] --> [1, 28, 28]
+            torch.nn.BatchNorm2d(8),
+            torch.nn.ConvTranspose2d(8, 1, 4, 2, 1),
+        )
+        self.merge3 = Merge([1, 28, 28], 10)
+        self.sigmoid = torch.nn.Sigmoid()
+
+    def forward(self, x, y):  # [?, 1, 28, 28]
+        v = self.encode(x)  # [?, 4]
+        p = self.decode(v, y)
+        # [?, 1, 28, 28]
+        return p
+
+    def decode(self, v, y):
+        y = torch.nn.functional.one_hot(y, 10)  # [?, 10]
+        y = y.float()
+        p = self.merge0(v, y)
+        p = self.decode1(p)
+        p = self.merge1(p, y)
+        p = self.decode2(p)
+        p = self.merge2(p, y)
+        p = self.decode3(p)
+        p = self.merge3(p, y)
+        p = self.sigmoid(p)
+        return p
+
+
+def get_model():
+    model = MnistModel()
+    if os.path.exists(model_path):
+        try:
+            model.load_state_dict(torch.load(model_path, weights_only=True))
+        except:
+            print(f'从{model_path}加载模型失败，很可能是模型结构发生了改变')
+            exit(0)
+    else:
+        print(f'未发现模型{model_path}')
+    return model
+
+def train():
+    model = get_model()
+    optimier = torch.optim.Adam(model.parameters(), lr=lr)
+    loss_fn = torch.nn.MSELoss()
+
+    # 3. 训练
+    losses = []
+    for epoch in range(epochs):
+        for batch, (x, y) in enumerate(dataloader):
+            model.train()
+            # x: [?, 1, 28, 28], y: [?]
+            p = model(x, y)
+            # 不需要对logits调用softmax函数，不需要把y转为独热向量
+            loss = loss_fn(p, x)
+
+            loss.backward()
+            optimier.step()
+            optimier.zero_grad()
+
+            model.eval()
+            with torch.no_grad():
+                losses.append(loss.item())
+                if (batch + 1) % losses_size == 0:
+                    loss = np.mean(losses)
+                    print(f"epoch: {epoch+1}.{batch+1}, loss: {loss:.6f}")
+                    losses.clear()
+        torch.save(model.state_dict(), model_path)
+        print(f'保存模型至{model_path}')
+    print("训练完毕！")
+
+# 4. 测试
+def _test():
+    vectors = np.float32(np.random.normal(size=[20, 4]))
+    vectors = torch.from_numpy(vectors)
+
+    y = np.int64(np.arange(10))
+    y = np.reshape([y, y], [-1])
+    y = torch.from_numpy(y)
+
+    model = get_model()
+    model.eval()
+    with torch.no_grad():
+        ps = model.decode(vectors, y)
+        ps = ps.numpy()     # [20, 1, 28, 28]
+        ps = ps.reshape([20, 28, 28])
+    for i, p in enumerate(ps):
+        ppl.subplot(4, 5, i+1)
+        p = np.uint8(p * 255)
+        ppl.imshow(p)
+        ppl.axis('off')
+    ppl.show()
+
+def _test_cv():
+    vectors = np.float32(np.random.normal(size=[20, 4]))
+    vectors = torch.from_numpy(vectors)
+
+    y = np.int64(np.arange(10))
+    y = np.reshape([y, y], [-1])
+    y = torch.from_numpy(y)
+
+    model = get_model()
+    model.eval()
+    with torch.no_grad():
+        ps = model.decode(vectors, y)
+        ps = ps.numpy()     # [20, 1, 28, 28]
+        ps = ps.reshape([20, 28, 28])
+
+    ps = ps.reshape([4, 5, 28, 28])
+    ps = ps.transpose([0, 2, 1, 3])     # --> [4, 28, 5, 28]
+    ps = ps.reshape([4*28, 5*28])
+
+    cv2.imshow('AAA', np.uint8(ps*255))
+    cv2.waitKey()
+    cv2.destroyAllWindows()
+
+if __name__ == '__main__':
+    # train()
+    _test_cv()
+========== p12_0_Mnist_椋庢牸杩佺Щ.py ==========
+"""
+MNIST手写数字生成
+"""
+from torchvision import datasets as ds, transforms as ts
+from torch.utils.data import DataLoader
+import torch as T
+import numpy as np
+import os
+import matplotlib.pyplot as ppl
+
+batch_size = 5
+lr = 0.01
+epochs = 20
+model_path = 'p12_0_model.pth'
+losses_size = 10
+
+# 1. 准备样本
+tr = ts.Compose([
+    ts.RandomAffine(0, (1/28, 1/28), (1.0, 1.0)),
+    ts.ToTensor()
+])
+
+dataset = ds.MNIST(root=r'../资源/', train=True, download=True,
+                         transform=tr)
+dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+
+# 2. 建模
+class MyConv(T.nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size, stride, padding, pool_size):
+        super().__init__()
+        self.net = T.nn.Sequential(
+            T.nn.BatchNorm2d(in_channels),
+            T.nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding),
+            T.nn.ReLU(),
+            T.nn.MaxPool2d(pool_size, pool_size),
+        )
+
+    def forward(self, x):
+        return self.net(x)
+
+class Merge(T.nn.Module):
+    def __init__(self, shape, y_size):
+        super().__init__()
+        t_size = np.prod(shape)
+        self.net = T.nn.Sequential(
+            T.nn.Linear(y_size, t_size),
+            T.nn.Unflatten(1, shape)
+        )
+    def forward(self, p, y_onehot):
+        y = self.net(y_onehot)
+        return y + p
+
+
+class MnistModel(T.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.encode = T.nn.Sequential(
+            # [1, 28, 28] --> [8, 14, 14]
+            MyConv(1, 32, 3, 1, 1, 2),
+            # [32, 14, 14] --> [64, 7, 7]
+            MyConv(32, 64, 3, 1, 1, 2),
+            # [64, 7, 7] --> [4, 1, 1]
+            # [64, 7, 7] --> [4, 1, 1]
+            T.nn.BatchNorm2d(64),
+            T.nn.Conv2d(64, 4, 7, 1),
+
+            T.nn.BatchNorm2d(4, affine=False),
+            T.nn.Flatten()
+        )
+
+        self.merge0 = Merge([4], 10)
+        self.decode1 = T.nn.Sequential(
+            # [4, 1, 1] --> [64, 7, 7]
+            T.nn.Linear(4, 64*7*7),
+            T.nn.Unflatten(1, [64, 7, 7]),
+            T.nn.ReLU()
+        )
+        self.merge1 = Merge([64, 7, 7], 10)
+        self.decode2 = T.nn.Sequential(
+            # [64, 7, 7] --> [32, 14, 14]
+            T.nn.BatchNorm2d(64),
+            T.nn.ConvTranspose2d(64, 32, 4, 2, 1),
+            T.nn.ReLU()
+        )
+        self.merge2 = Merge([32, 14, 14], 10)
+        self.decode3 = T.nn.Sequential(
+            # [32, 14, 14] --> [1, 28, 28]
+            T.nn.BatchNorm2d(32),
+            T.nn.ConvTranspose2d(32, 1, 4, 2, 1)
+        )
+        self.merge3 = Merge([1, 28, 28], 10)
+        self.sigmoid = T.nn.Sigmoid()
+
+    def forward(self, x, y, ty):
+        # x: [?, 1, 28, 28]
+        # y: [?, 10]
+        v = self.encode(x)  # [?, 4] 语义向量
+        p2 = self.decode(v, ty)
+        p2 = self.encode(p2)
+        p2 = self.decode(p2, y)
+
+        p1 = self.decode(v, y)
+
+        return p1, p2
+
+    def decode(self, p, y):
+        y = T.nn.functional.one_hot(y, 10)
+        y = y.float()
+        p = self.merge0(p, y)
+        p = self.decode1(p)
+        p = self.merge1(p, y)
+        p = self.decode2(p)
+        p = self.merge2(p, y)
+        p = self.decode3(p)
+        p = self.merge3(p, y)
+        p = self.sigmoid(p)
+        return p
+
+
+def get_model():
+    model = MnistModel()
+    model = model.to(device)
+    if os.path.exists(model_path):
+        try:
+            model.load_state_dict(T.load(model_path, weights_only=True, map_location=device))
+        except:
+            print(f'从{model_path}加载模型失败, 很可能是因为模型发生了改变')
+            exit(0)
+    else:
+        print(f'未发现模型{model_path}')
+    return model
+
+def train():
+    model = get_model()
+    optimier = T.optim.Adam(model.parameters(), lr=lr)
+    loss_fn = T.nn.MSELoss().to(device)
+
+    # 3. 训练
+    losses = []
+    for epoch in range(epochs):
+        for batch, (x, y) in enumerate(dataloader):
+            x = x.to(device)
+            y = y.to(device)
+            ty = get_target_y(y.shape[0]).to(device)
+            model.train()
+            # x: [?, 1, 28, 28], y: [?, 1, 28, 28]
+            # print('x min, max=', np.max(x.numpy()))
+            p1, p2 = model(x, y, ty)
+            loss1 = loss_fn(p1, x)
+            loss2 = loss_fn(p2, x)
+            loss = loss1 + loss2
+
+            loss.backward()
+            optimier.step()
+            optimier.zero_grad()
+
+            model.eval()
+            with T.no_grad():
+                losses.append([loss.cpu().item(), loss1.cpu().item(), loss2.cpu().item()])
+                loss = np.mean(losses, 0)
+                if (batch+1) % losses_size == 0:
+                    print(f"epoch: {epoch+1}.{batch+1}, loss: {loss}")
+                    losses.clear()
+        T.save(model.state_dict(), model_path)
+        print(f'保存模型{model_path}')
+    print("训练完毕！")
+
+def get_target_y(num):
+    return T.randint(0, 10, [num])
+
+# 4. 测试
+def _test():
+    model = get_model()
+    num = 10
+    vec = np.random.normal(size=(10, 4))
+    vec = T.from_numpy(np.float32(vec)).to(device)
+    y = np.arange(10, dtype=np.int32)
+    y = T.from_numpy(y).long().to(device)
+    model.eval()
+    with T.no_grad():
+        imgs = model.decode(vec, y)    # [10, 1, 28, 28]
+        imgs = imgs.cpu().numpy()
+        imgs = np.reshape(imgs, [10, 28, 28])
+        imgs = np.uint8(imgs*255)
+    for i, img in enumerate(imgs):
+        ppl.subplot(2, 5, i+1)
+        ppl.imshow(img)
+        ppl.axis('off')
+    ppl.show()
+
+if __name__ == '__main__':
+    device = 'cuda:0' if T.cuda.is_available() else 'cpu'
+    print('device:', device)
+    train()
+    # _test()
+========== p12_0_椋庢牸杩佺Щ_涓€浜岀彮.py ==========
+"""
+MNIST指定手写数字生成模型，使用Conditional VAE
+关于卷积神经网络，最好的电子教材之一：
+https://cloud.tencent.com/developer/article/2109487
+"""
+from torchvision import datasets as ds, transforms as ts
+from torch.utils.data import DataLoader
+import torch
+import numpy as np
+
+import matplotlib.pyplot as ppl
+import os
+import cv2   # opencv-python
+
+batch_size = 100
+lr = 0.01
+epochs = 2
+model_path = "p12_0_指定生成数字_一二班.pth"
+losses_size = 10
+
+# 1. 准备样本
+tr = ts.Compose([
+    ts.RandomAffine(0, (0.05, 0.05), (1, 1)),
+    ts.ToTensor()
+])
+dataset = ds.MNIST(root=r'../资源/', train=True, download=True,
+                         transform=tr)
+dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+
+# 2. 建模
+class MyConv(torch.nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size, stride, padding, pool_size):
+        super().__init__()
+        self.net = torch.nn.Sequential(
+            torch.nn.BatchNorm2d(in_channels),
+            torch.nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding),
+            torch.nn.ReLU(),
+            torch.nn.MaxPool2d(pool_size, pool_size),
+        )
+    def forward(self, x):  # x: [?, c, h, w]
+        return self.net(x)
+
+class Merge(torch.nn.Module):
+    def __init__(self, shape, size):
+        super().__init__()
+        total = np.prod(shape)
+        self.net = torch.nn.Sequential(
+            torch.nn.Linear(size, total),
+            torch.nn.Unflatten(1, shape)
+        )
+
+    def forward(self, x, y_onehot):
+        y = self.net(y_onehot)
+        return x + y
+
+class MnistModel(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.encode = torch.nn.Sequential(
+            # [1, 28, 28] --> [8, 14, 14]
+            MyConv(1, 8, 3, 1, 1, 2),
+            # [8, 14, 14] --> [16, 7, 7]
+            MyConv(8, 16, 3, 1, 1, 2),
+            # [16, 7, 7] --> [4]
+            torch.nn.BatchNorm2d(16),
+            torch.nn.Conv2d(16, 4,7, 7, 1),
+
+            torch.nn.BatchNorm2d(4, affine=False),
+            torch.nn.Flatten()
+        )
+        self.merge0 = Merge([4], 10)
+        self.decode1 = torch.nn.Sequential(
+            # [4] --> [16, 7, 7]
+            torch.nn.Linear(4, 16*7*7),
+            torch.nn.Unflatten(1, [16, 7, 7]),
+            torch.nn.ReLU()
+        )
+        self.merge1 = Merge([16, 7, 7], 10)
+
+        self.decode2 = torch.nn.Sequential(
+            # [16, 7, 7] --> [8, 14, 14]
+            torch.nn.BatchNorm2d(16),
+            torch.nn.ConvTranspose2d(16, 8, 4, 2, 1),
+            torch.nn.ReLU()
+        )
+        self.merge2 = Merge([8, 14, 14], 10)
+
+        self.decode3 = torch.nn.Sequential(
+            # [8, 14, 14] --> [1, 28, 28]
+            torch.nn.BatchNorm2d(8),
+            torch.nn.ConvTranspose2d(8, 1, 4, 2, 1),
+        )
+        self.merge3 = Merge([1, 28, 28], 10)
+        self.sigmoid = torch.nn.Sigmoid()
+
+    def forward(self, x, y, ty):  # [?, 1, 28, 28]
+        v = self.encode(x)  # [?, 4]
+        p1 = self.decode(v, y)
+
+        p2 = self.decode(v, ty)
+        v = self.encode(p2)
+        p2 = self.decode(v, y)
+        # [?, 1, 28, 28]
+        return p1, p2
+
+    def decode(self, v, y):
+        y = torch.nn.functional.one_hot(y, 10)  # [?, 10]
+        y = y.float()
+        p = self.merge0(v, y)
+        p = self.decode1(p)
+        p = self.merge1(p, y)
+        p = self.decode2(p)
+        p = self.merge2(p, y)
+        p = self.decode3(p)
+        p = self.merge3(p, y)
+        p = self.sigmoid(p)
+        return p
+
+
+def get_model():
+    model = MnistModel()
+    if os.path.exists(model_path):
+        try:
+            model.load_state_dict(torch.load(model_path, weights_only=True))
+        except:
+            print(f'从{model_path}加载模型失败，很可能是模型结构发生了改变')
+            exit(0)
+    else:
+        print(f'未发现模型{model_path}')
+    return model
+
+def train():
+    model = get_model()
+    optimier = torch.optim.Adam(model.parameters(), lr=lr)
+    loss_fn = torch.nn.MSELoss()
+
+    # 3. 训练
+    losses = []
+    for epoch in range(epochs):
+        for batch, (x, y) in enumerate(dataloader):
+            model.train()
+            # x: [?, 1, 28, 28], y: [?]
+            ty = torch.randint(0, 10, y.shape)
+            p1, p2 = model(x, y, ty)
+            # 不需要对logits调用softmax函数，不需要把y转为独热向量
+            loss1 = loss_fn(p1, x)
+            loss2 = loss_fn(p2, x)
+            loss = loss1 + loss2
+
+            loss.backward()
+            optimier.step()
+            optimier.zero_grad()
+
+            model.eval()
+            with torch.no_grad():
+                losses.append([loss.item(), loss1.item(), loss2.item()])
+                if (batch + 1) % losses_size == 0:
+                    loss = np.mean(losses, 0)
+                    print(f"epoch: {epoch+1}.{batch+1}, loss: {loss}")
+                    losses.clear()
+        torch.save(model.state_dict(), model_path)
+        print(f'保存模型至{model_path}')
+    print("训练完毕！")
+
+# 4. 测试
+def _test_cv():
+    dataset = ds.MNIST(root=r'../资源/', train=False, download=True,
+                       transform=tr)
+    x = [dataset[2597+i][0] for i in range(20)]
+    x = torch.from_numpy(np.float32(x))
+
+    ty = range(10)
+    ty = np.array([ty, ty]).reshape([-1])  # ty:[20]
+    ty = torch.from_numpy(ty).long()
+
+    model = get_model()
+    model.eval()
+    with torch.no_grad():
+        v = model.encode(x)
+        p = model.decode(v, ty)
+        p = p.numpy()     # [20, 1, 28, 28]
+
+    p = np.concatenate([x, p], 0)   # [40, 1, 28, 28]
+    p = p.reshape([4, 10, 28, 28])
+    p = p.transpose([0, 2, 1, 3])     # --> [4, 28, 5, 28]
+    p = p.reshape([4*28, 10*28])
+
+    cv2.imshow('AAA', np.uint8(p*255))
+    cv2.waitKey()
+    cv2.destroyAllWindows()
+
+if __name__ == '__main__':
+    # train()
+    _test_cv()
+========== p13_0_LSTM_鍞愯瘲鍒涗綔_鏍锋湰澶勭悊.py ==========
+import numpy as np
+
+sample_path = '../资源/全唐诗_7X4.txt'
+
+def get_id(ch, ch_dict, ch_order):
+    if ch in ch_dict:
+        id_num = ch_dict[ch]
+        id_num[1] += 1
+        id = id_num[0]
+    else:
+        id = len(ch_dict)
+        ch_dict[ch] = [id, 1]
+        ch_order.append(ch)
+    return id
+
+def get_samples():
+    ch_dict = dict()
+    ch_order = []
+    samples = []
+    with open(sample_path, encoding='utf-8') as fp:
+        poems = fp.readlines()
+    for p in poems:
+        p = p.rstrip()
+        print(p)
+        poem = [get_id(ch, ch_dict, ch_order) for ch in p]
+        samples.append(np.array(poem))
+    print(f'{len(poems)} poems')
+    return samples, ch_dict, ch_order
+
+if __name__ == '__main__':
+    samples, ch_dict, ch_order = get_samples()
+    print(f'{len(ch_order)}汉字')
+    print(ch_dict['山'])
+    print(ch_order[ch_dict['山'][0]])
+========== p13_1_LSTM_鍞愯瘲鍒涗綔.py ==========
+import torch.nn as nn
+import torch as T
+from torch.utils.data import DataLoader, Dataset
+import numpy as np
+import os
+from p13_0_LSTM_唐诗创作_样本处理 import get_samples
+
+epochs = 2
+batch_size = 10
+lr = 0.01
+losses_size = 20
+model_path = 'p13_1_model.pth'
+
+input_size = 100
+num_layers = 2
+dropout = 0
+samples, ch_dict, ch_order = get_samples()
+weights = [ch_dict[ch][1] for ch in ch_order]
+weights = np.array(weights)
+weights = T.from_numpy(1 - weights / np.sum(weights))
+# 1. 样本
+class PoemDataset(Dataset):
+    def __len__(self):
+        return len(samples)
+
+    def __getitem__(self, item):
+        s = samples[item]
+        return s[:-1], s[1:]
+
+# 2. 模型
+class PoemModel(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.embedding = nn.Embedding(len(ch_order), input_size)
+        self.lstm = nn.LSTM(input_size=input_size,
+                    hidden_size=input_size,
+                    num_layers=num_layers,
+                    bidirectional=False,
+                    dropout=dropout)
+        self.line = nn.Linear(input_size, len(ch_dict))
+
+    def forward(self, x):   # x: [batch_size, 31]
+        x = self.embedding(x)   # [batch_size, 31, 100]
+        x, (long, short) = self.lstm(x) # x:[?, 31, 100], long:[40]
+        x = self.line(x)
+        return x
+
+# 3. 训练
+def get_model():
+    model = PoemModel()
+    if os.path.exists(model_path):
+        try:
+            model.load_state_dict(T.load(model_path, weights_only=True))
+            print(f'从{model_path}加载模型成功')
+        except:
+            print(f'从{model_path}加载模型失败，模型很可能改变了')
+    else:
+        print(f'未发现模型{model_path}')
+    return model
+
+def train():
+    model = get_model()
+    optim = T.optim.Adam(model.parameters(), lr=lr)
+    losses = []
+    loss_fn = nn.CrossEntropyLoss(weights)
+    dl = DataLoader(PoemDataset(), batch_size, True)
+    for epoch in range(epochs):
+        trained = 0
+        for batch, (x, y) in enumerate(dl):
+            model.train()
+            p = model(x)
+            y = nn.functional.one_hot(y, len(ch_dict)).float()
+            p = T.reshape(p, [-1, len(ch_dict)])
+            y = T.reshape(y, [-1, len(ch_dict)])
+            loss = loss_fn(p, y)
+
+            loss.backward()
+            optim.step()
+            optim.zero_grad()
+
+            model.eval()
+            with T.no_grad():
+                trained += len(x)
+                losses.append(loss.item())
+                if (batch+1) % losses_size == 0:
+                    loss = np.mean(losses)
+                    print(f'{epoch+1}_{trained/len(samples)*100:3.0f}% loss = {loss:.8f}')
+                    losses.clear()
+        T.save(model.state_dict(), model_path)
+        print(f'模型保存至{model_path}')
+    print('训练结束')
+# 4. 测试
+
+def ids2poem(ids):
+    poem = [ch_order[id] for id in ids]
+    return ''.join(poem)
+
+def _test(ch = '天'):
+    poem = ch
+    ch = ch_dict[ch][0]
+    model = get_model()
+    model.eval()
+    with T.no_grad():
+        x = np.array([[ch]], dtype=np.int64)   # [1, 1]
+        x = T.from_numpy(x)
+        C = T.from_numpy(np.zeros([num_layers, 1, input_size], dtype=np.float32))
+        h = T.from_numpy(np.zeros([num_layers, 1, input_size], dtype=np.float32))
+
+        for i in range(32 - 1):
+            x = model.embedding(x)  # [1, 1] --> [1, 1, 100]
+            y, (C, h) = model.lstm(x, (C, h))
+            y = model.line(y)   # [1, 1, 100] --> [1, 1, 4340]
+            y = T.argmax(y, 2) # [1, 1, 4340] --> [1, 1]
+            x = y   # x, y: [batch_size, seq_len]
+            y = y.numpy()
+            poem += ch_order[y[0, 0]]
+    print(poem)
+
+if __name__ == '__main__':
+    # pds = PoemDataset()
+    # print(pds[123])
+    # print(pds[123].shape)
+    # print(ids2poem(pds[123]))
+
+    # train()
+    _test()
