@@ -125,7 +125,8 @@ def main():
     parser.add_argument(
         "--stage",
         choices=["prepare", "eda", "train", "recommend", "explain", "benchmark", "all"],
-        required=True,
+        required=False,
+        default=None,
         help="Pipeline stage to run"
     )
     parser.add_argument(
@@ -133,9 +134,9 @@ def main():
         action="store_true",
         help="List all available stages"
     )
-    
+
     args = parser.parse_args()
-    
+
     if args.list:
         print("\nAvailable pipeline stages:")
         print("-" * 60)
@@ -145,16 +146,20 @@ def main():
             print(f"  Description: {stage_info['description']}")
             print(f"  Scripts: {', '.join(stage_info['scripts'])}")
         return
-    
+
+    if args.stage is None:
+        parser.print_help()
+        sys.exit(0)
+
     if args.stage == "all":
         print("\n🚀 Running all pipeline stages")
         print("=" * 60)
-        
+
         for stage_name in ["prepare", "eda", "train", "recommend", "explain", "benchmark"]:
             if not run_stage(stage_name):
                 print(f"\n❌ Pipeline failed at stage: {stage_name}")
                 sys.exit(1)
-        
+
         print("\n" + "=" * 60)
         print("✅ All pipeline stages completed successfully!")
         print("=" * 60)

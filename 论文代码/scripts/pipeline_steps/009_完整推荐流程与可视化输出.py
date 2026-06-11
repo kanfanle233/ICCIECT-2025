@@ -16,6 +16,8 @@ import numpy as np
 
 from sklearn.ensemble import RandomForestRegressor
 import shap
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 # ---------- 1. 特征和目标 ----------
@@ -97,7 +99,7 @@ shap.plots.waterfall(
 )
 plt.title(f"Waterfall Plot for Sample {i}")
 plt.tight_layout()
-plt.show()
+plt.close()
 
 # 6. （可选） 使用 legacy waterfall
 plt.figure(figsize=(6,4))
@@ -108,7 +110,7 @@ shap.plots._waterfall.waterfall_legacy(
 )
 plt.title(f"Legacy Waterfall for Sample {i}")
 plt.tight_layout()
-plt.show()
+plt.close()
 
 # 7. （可选） Partial Dependence / 依赖图
 shap.dependence_plot(
@@ -229,16 +231,16 @@ print("开始完整的推荐系统和可视化流程...")
 
 # ---------- 1. 路径设置 ----------
 BASE_DIR = PROJECT_ROOT
-DATA_DIR = PROJECT_ROOT / "志愿填报辅助系统" / "上海高考录取数据17-23年"
+DATA_DIR = DATA_RAW_DIR
 
 # ---------- 2. 数据加载 ----------
 try:
     # 加载选科组合数据
-    df_combo = pd.read_csv(DATA_DIR / "subject_combo_to_mbti_clean.csv", encoding="utf-8-sig")
+    df_combo = pd.read_csv(OUTPUT_DIR / "subject_combo_to_mbti_clean.csv", encoding="utf-8-sig")
     df_combo = df_combo.rename(columns={"subject_combo": "combo", "count": "count"})
 
     # 加载专业MBTI数据
-    df_items = pd.read_csv(DATA_DIR / "2023上海专业分数线_with_PredictedMBTI.csv", encoding="utf-8-sig")
+    df_items = pd.read_csv(OUTPUT_DIR / "2023上海专业分数线_with_PredictedMBTI.csv", encoding="utf-8-sig")
     df_items["school_major"] = df_items["院校名称"] + "_" + df_items["专业名称"]
 
     print(f"选科组合数据形状: {df_combo.shape}")
@@ -359,7 +361,7 @@ out = out.merge(df_items[["school_major", "院校名称", "专业名称", "最�
 out = out[["uid", "combo", "mbti", "rank", "院校名称", "专业名称", "最低分", "Predicted_MBTI", "est_score"]]
 
 # 保存推荐结果
-recommendations_file = DATA_DIR / "combo_based_recommendations.csv"
+recommendations_file = OUTPUT_DIR / "combo_based_recommendations.csv"
 out.to_csv(recommendations_file, index=False, encoding="utf-8-sig")
 print(f"✅ 推荐结果已保存: {recommendations_file}")
 
@@ -433,7 +435,7 @@ save_path = DATA_DIR / f"{uid}_top10_recommendations.png"
 plt.savefig(save_path, dpi=300, bbox_inches='tight', facecolor='white')
 print(f"✅ 推荐结果可视化已保存到: {save_path}")
 
-plt.show()
+plt.close()
 
 # ---------- 9. MBTI匹配分析 ----------
 print(f"\n🔍 MBTI匹配分析:")
@@ -489,11 +491,11 @@ plt.grid(True, alpha=0.3)
 plt.tight_layout()
 
 # 保存摘要图
-summary_path = DATA_DIR / "all_users_recommendation_summary.png"
+summary_path = FIGURE_DIR / "all_users_recommendation_summary.png"
 plt.savefig(summary_path, dpi=300, bbox_inches='tight')
 print(f"✅ 所有用户推荐摘要已保存到: {summary_path}")
 
-plt.show()
+plt.close()
 
 print(f"\n🎉 完整流程完成!")
 print(f"📁 推荐结果文件: {recommendations_file}")
@@ -513,12 +515,12 @@ plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
 
 # ---------- 1. 路径设置 ----------
 BASE_DIR = PROJECT_ROOT
-DATA_DIR = PROJECT_ROOT / "志愿填报辅助系统" / "上海高考录取数据17-23年"
+DATA_DIR = DATA_RAW_DIR
 
 # ---------- 2. 加载真实的推荐结果 ----------
 try:
     # 尝试加载我们之前生成的推荐结果
-    recommendations = pd.read_csv(DATA_DIR / "combo_based_recommendations.csv", encoding="utf-8-sig")
+    recommendations = pd.read_csv(OUTPUT_DIR / "combo_based_recommendations.csv", encoding="utf-8-sig")
     print(f"成功加载推荐数据，形状: {recommendations.shape}")
 
     # 显示可用的用户ID
@@ -605,7 +607,7 @@ save_path = DATA_DIR / f"{uid}_top10_recommendations.png"
 plt.savefig(save_path, dpi=300, bbox_inches='tight', facecolor='white')
 print(f"✅ 推荐结果可视化已保存到: {save_path}")
 
-plt.show()
+plt.close()
 
 # ---------- 8. 额外分析：显示MBTI匹配情况 ----------
 print(f"\n🔍 MBTI匹配分析:")
@@ -669,11 +671,11 @@ plt.grid(True, alpha=0.3)
 plt.tight_layout()
 
 # 保存摘要图
-summary_path = DATA_DIR / "all_users_recommendation_summary.png"
+summary_path = FIGURE_DIR / "all_users_recommendation_summary.png"
 plt.savefig(summary_path, dpi=300, bbox_inches='tight')
 print(f"✅ 所有用户推荐摘要已保存到: {summary_path}")
 
-plt.show()
+plt.close()
 
 print(f"\n🎉 可视化完成!")
 print(f"📁 单个用户图表: {save_path}")

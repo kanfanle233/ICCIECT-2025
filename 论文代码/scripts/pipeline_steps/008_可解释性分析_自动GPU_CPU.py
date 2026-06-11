@@ -9,6 +9,8 @@ Execution order: keep numeric order 001 -> 010
 # ===== From Notebook CELL 75 =====
 import pandas as pd
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 import torch
@@ -23,27 +25,27 @@ import sys
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 from gaokao_recommender.paths import *
 
+# 导入统一的设备检测模块
+from gaokao_recommender.device_utils import get_device, optimize_batch_size
+
 DATA_DIR = DATA_RAW_DIR
 OUTPUT_DIR = DATA_PROCESSED_DIR
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 print("使用 PyTorch 进行可解释性分析...")
 
-# 自动选择计算设备：优先 CUDA，不可用则回退 CPU
-USE_CUDA = torch.cuda.is_available()
-device = torch.device("cuda" if USE_CUDA else "cpu")
-if USE_CUDA:
-    torch.backends.cudnn.benchmark = True
-    print(f"检测到 CUDA，可用设备: {torch.cuda.get_device_name(0)}")
-else:
-    print("未检测到可用 CUDA，使用 CPU 运行")
+# 自动选择计算设备：CUDA > MPS (Apple Silicon) > CPU
+device, device_type = get_device(verbose=True)
+
+# 优化 batch_size
+BATCH_SIZE = optimize_batch_size(device, default_batch_size=64, verbose=True)
 
 # ---------- 0. 路径和数据加载 ----------
 BASE_DIR = PROJECT_ROOT
-DATA_DIR = PROJECT_ROOT / "志愿填报辅助系统" / "上海高考录取数据17-23年"
+DATA_DIR = DATA_RAW_DIR
 
 # 加载候选数据
 try:
-    cand = pd.read_csv(DATA_DIR / "recommendation_candidates.csv", encoding="utf-8-sig")
+    cand = pd.read_csv(OUTPUT_DIR / "recommendation_candidates.csv", encoding="utf-8-sig")
     print("从文件加载候选数据")
 except:
     print("❌ 请先运行推荐系统代码生成候选数据")
@@ -110,7 +112,7 @@ y_test_tensor = torch.FloatTensor(y_test).unsqueeze(1)
 
 # 数据加载器
 train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
-train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True, pin_memory=USE_CUDA)
+train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True, pin_memory=(device_type == "cuda"))
 
 # ---------- 3. 训练模型 ----------
 def train_model(model, train_loader, epochs=100):
@@ -120,8 +122,8 @@ def train_model(model, train_loader, epochs=100):
     for epoch in range(epochs):
         epoch_loss = 0.0
         for batch_x, batch_y in train_loader:
-            batch_x = batch_x.to(device, non_blocking=USE_CUDA)
-            batch_y = batch_y.to(device, non_blocking=USE_CUDA)
+            batch_x = batch_x.to(device, non_blocking=(device_type == "cuda"))
+            batch_y = batch_y.to(device, non_blocking=(device_type == "cuda"))
             optimizer.zero_grad(set_to_none=True)
             outputs = model(batch_x)
             loss = criterion(outputs, batch_y)
@@ -143,7 +145,7 @@ train_losses = train_model(model, train_loader)
 # ---------- 4. 模型评估 ----------
 model.eval()
 with torch.no_grad():
-    y_pred_tensor = model(X_test_tensor.to(device, non_blocking=USE_CUDA))
+    y_pred_tensor = model(X_test_tensor.to(device, non_blocking=(device_type == "cuda")))
     y_pred = y_pred_tensor.squeeze().cpu().numpy()
 
 mae = mean_absolute_error(y_test, y_pred)
@@ -160,7 +162,7 @@ print("\n🔍 开始可解释性分析...")
 def compute_feature_importance(model, X_tensor, feature_names):
     """使用梯度计算特征重要性"""
     model.eval()
-    X_local = X_tensor.to(device, non_blocking=USE_CUDA).clone().detach()
+    X_local = X_tensor.to(device, non_blocking=(device_type == "cuda")).clone().detach()
     X_local.requires_grad_(True)
 
     # 前向传播
@@ -198,7 +200,7 @@ print(gradient_importance)
 def partial_dependence_analysis(model, feature_index, feature_values, X_base, feature_names):
     """计算部分依赖图"""
     pdp_values = []
-    X_base_device = X_base.to(device, non_blocking=USE_CUDA)
+    X_base_device = X_base.to(device, non_blocking=(device_type == "cuda"))
 
     for value in feature_values:
         X_temp = X_base_device.clone()
@@ -211,7 +213,7 @@ def partial_dependence_analysis(model, feature_index, feature_values, X_base, fe
 
 # 为每个特征计算PDP
 feature_values_dict = {}
-X_test_device = X_test_tensor.to(device, non_blocking=USE_CUDA)
+X_test_device = X_test_tensor.to(device, non_blocking=(device_type == "cuda"))
 for i, feature in enumerate(FEATURES):
     feature_min = X_test_device[:, i].min().item()
     feature_max = X_test_device[:, i].max().item()
@@ -228,7 +230,7 @@ for i, feature in enumerate(FEATURES):
 def analyze_individual_prediction(model, sample_index, X_tensor, feature_names):
     """分析单个预测"""
     model.eval()
-    X_sample = X_tensor[sample_index:sample_index+1].to(device, non_blocking=USE_CUDA).clone().detach()
+    X_sample = X_tensor[sample_index:sample_index+1].to(device, non_blocking=(device_type == "cuda")).clone().detach()
     X_sample.requires_grad_(True)
 
     # 预测
@@ -317,8 +319,8 @@ plt.title('残差分析', fontsize=14, fontweight='bold')
 plt.grid(True, alpha=0.3)
 
 plt.tight_layout()
-plt.savefig(DATA_DIR / "pytorch_interpretability.png", dpi=300, bbox_inches='tight')
-plt.show()
+plt.savefig(FIGURE_DIR / "pytorch_interpretability.png", dpi=300, bbox_inches='tight')
+plt.close()
 
 # ---------- 7. 详细分析 ----------
 print(f"\n🔍 详细分析结果:")
@@ -350,7 +352,7 @@ for interval, count in prediction_intervals.items():
     print(f"  {interval}: {count} 个预测 ({percentage:.1f}%)")
 
 # ---------- 8. 保存分析结果 ----------
-analysis_results = DATA_DIR / "pytorch_interpretability_report.txt"
+analysis_results = PROJECT_ROOT / "reports" / "pytorch_interpretability_report.txt"
 with open(analysis_results, 'w', encoding='utf-8') as f:
     f.write("=== PyTorch 可解释性分析报告 ===\n\n")
     f.write(f"数据规模: {cand.shape}\n")
@@ -369,13 +371,13 @@ with open(analysis_results, 'w', encoding='utf-8') as f:
         f.write(f"{interval}: {count} ({percentage:.1f}%)\n")
 
 # 保存模型
-torch.save(model.state_dict(), DATA_DIR / "interpretable_model.pth")
+torch.save(model.state_dict(), MODEL_INTERPRETABILITY_DIR / "interpretable_model.pth")
 torch.save({
     'model_state_dict': model.state_dict(),
     'X_mean': X_mean,
     'X_std': X_std,
     'feature_names': FEATURES
-}, DATA_DIR / "interpretable_model_complete.pth")
+}, MODEL_INTERPRETABILITY_DIR / "interpretable_model_complete.pth")
 
 print(f"\n✅ PyTorch 可解释性分析完成！")
 print(f"📊 可视化已保存: {DATA_DIR / 'pytorch_interpretability.png'}")
@@ -403,19 +405,19 @@ print("开始 SHAP 可解释性分析...")
 
 # ---------- 0. 路径和数据加载 ----------
 BASE_DIR = PROJECT_ROOT
-DATA_DIR = PROJECT_ROOT / "志愿填报辅助系统" / "上海高考录取数据17-23年"
+DATA_DIR = DATA_RAW_DIR
 
 # 如果 cand 数据不存在，重新构建
 try:
-    cand = pd.read_csv(DATA_DIR / "recommendation_candidates.csv", encoding="utf-8-sig")
+    cand = pd.read_csv(OUTPUT_DIR / "recommendation_candidates.csv", encoding="utf-8-sig")
     print("从文件加载候选数据")
 except:
     print("重新构建候选数据...")
     # 重新构建 cand 数据（基于之前的推荐系统代码）
-    df_combo = pd.read_csv(DATA_DIR / "subject_combo_to_mbti_clean.csv", encoding="utf-8-sig")
+    df_combo = pd.read_csv(OUTPUT_DIR / "subject_combo_to_mbti_clean.csv", encoding="utf-8-sig")
     df_combo = df_combo.rename(columns={"subject_combo": "combo", "count": "count"})
 
-    df_items = pd.read_csv(DATA_DIR / "2023上海专业分数线_with_PredictedMBTI.csv", encoding="utf-8-sig")
+    df_items = pd.read_csv(OUTPUT_DIR / "2023上海专业分数线_with_PredictedMBTI.csv", encoding="utf-8-sig")
     df_items["school_major"] = df_items["院校名称"] + "_" + df_items["专业名称"]
 
     df_users = df_combo[["combo", "mbti", "count"]].copy()
@@ -451,7 +453,7 @@ except:
         "院校名称", "专业名称", "Predicted_MBTI", "最低分"
     ]]
 
-    cand.to_csv(DATA_DIR / "recommendation_candidates.csv", index=False, encoding="utf-8-sig")
+    cand.to_csv(OUTPUT_DIR / "recommendation_candidates.csv", index=False, encoding="utf-8-sig")
     print("候选数据已保存")
 
 print(f"候选数据形状: {cand.shape}")
@@ -542,8 +544,8 @@ try:
     plt.title('MBTI匹配度 vs 评分（颜色表示难度）', fontsize=14, fontweight='bold')
 
     plt.tight_layout()
-    plt.savefig(DATA_DIR / "shap_analysis.png", dpi=300, bbox_inches='tight')
-    plt.show()
+    plt.savefig(FIGURE_DIR / "shap_analysis.png", dpi=300, bbox_inches='tight')
+    plt.close()
 
     # ---------- 5. 详细分析 ----------
     print(f"\n🔍 SHAP 分析详情:")
@@ -627,11 +629,11 @@ except ImportError:
     plt.title('残差分析')
 
     plt.tight_layout()
-    plt.savefig(DATA_DIR / "feature_analysis_alternative.png", dpi=300)
-    plt.show()
+    plt.savefig(FIGURE_DIR / "feature_analysis_alternative.png", dpi=300)
+    plt.close()
 
 # ---------- 7. 保存分析结果 ----------
-analysis_results = DATA_DIR / "shap_analysis_results.txt"
+analysis_results = PROJECT_ROOT / "reports" / "shap_analysis_results.txt"
 with open(analysis_results, 'w', encoding='utf-8') as f:
     f.write("=== SHAP 可解释性分析报告 ===\n\n")
     f.write(f"数据规模: {cand.shape}\n")
@@ -647,6 +649,5 @@ with open(analysis_results, 'w', encoding='utf-8') as f:
 print(f"\n✅ 分析完成！")
 print(f"📊 可视化已保存: {DATA_DIR / 'shap_analysis.png'}")
 print(f"📝 分析报告已保存: {analysis_results}")
-
 
 

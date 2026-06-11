@@ -8,6 +8,8 @@ Execution order: keep numeric order 001 -> 010
 
 # ===== From Notebook CELL 83 =====
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
@@ -34,9 +36,9 @@ plt.ylabel('样本数')
 plt.tight_layout()
 
 # 保存图片
-output_path = str(OUTPUT_DIR / "lstm_residuals_hist.png")
+output_path = str(FIGURE_DIR / "lstm_residuals_hist.png")
 plt.savefig(output_path, dpi=300)
-plt.show()
+plt.close()
 
 print(f"图像已保存至：{output_path}")
 

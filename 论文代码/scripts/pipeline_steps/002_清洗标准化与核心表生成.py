@@ -20,7 +20,7 @@ DATA_DIR = DATA_RAW_DIR
 OUTPUT_DIR = DATA_PROCESSED_DIR
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-PATH_COMBO = DATA_DIR / "subject_combo_to_mbti.txt"
+PATH_COMBO = DATA_DIR / "subject_combo_to_mbti.csv"
 PATH_MAJOR = DATA_DIR / "2023上海专业分数线.txt"
 PATH_SCORE = DATA_DIR / "2023年考生高考成绩分布表（上海市）.txt"
 
@@ -38,17 +38,15 @@ def _to_numeric_series(series: pd.Series) -> pd.Series:
     return pd.to_numeric(cleaned, errors="coerce")
 
 
-def _save_dual(df: pd.DataFrame, filename: str) -> None:
-    data_path = DATA_DIR / filename
+def _save_clean(df: pd.DataFrame, filename: str) -> None:
+    """只保存到 data/processed/，保持 data/raw/ 只读"""
     out_path = OUTPUT_DIR / filename
-    df.to_csv(data_path, index=False, encoding="utf-8-sig")
     df.to_csv(out_path, index=False, encoding="utf-8-sig")
-    print(f"已保存: {data_path}")
-    print(f"已同步: {out_path}")
+    print(f"✅ 已保存: {out_path}")
 
 
 def clean_combo_table(path: Path) -> pd.DataFrame:
-    raw = pd.read_csv(path, sep="\t", encoding="utf-8-sig")
+    raw = pd.read_csv(path, sep=",", encoding="utf-8-sig")
 
     rename_map = {
         "subject_combo": "选科组合",
@@ -166,14 +164,14 @@ def main() -> None:
     print("开始预处理核心数据...")
 
     df_combo = clean_combo_table(PATH_COMBO)
-    _save_dual(df_combo, "subject_combo_to_mbti_clean.csv")
+    _save_clean(df_combo, "subject_combo_to_mbti_clean.csv")
 
     df_major = clean_major_table(PATH_MAJOR, TARGET_YEAR)
-    _save_dual(df_major, "2023上海专业分数线_clean.csv")
+    _save_clean(df_major, "2023上海专业分数线_clean.csv")
 
     df_score = clean_score_table(PATH_SCORE, TARGET_YEAR)
-    _save_dual(df_score, "2023年考生高考成绩分布表_clean.csv")
-    _save_dual(df_score, "上海一分一段_2023_clean.csv")
+    _save_clean(df_score, "2023年考生高考成绩分布表_clean.csv")
+    _save_clean(df_score, "上海一分一段_2023_clean.csv")
 
     print("\n预处理完成，关键结果:")
     print(f"df_combo: {df_combo.shape}")

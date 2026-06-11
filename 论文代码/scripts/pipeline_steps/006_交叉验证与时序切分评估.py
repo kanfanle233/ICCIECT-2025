@@ -33,14 +33,16 @@ from pathlib import Path
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error, r2_score
 from sklearn.preprocessing import StandardScaler
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 # 1. 设定正确的目录 - 修正路径
 BASE_DIR = PROJECT_ROOT
-DATA_DIR = PROJECT_ROOT / "志愿填报辅助系统" / "上海高考录取数据17-23年"
+DATA_DIR = DATA_RAW_DIR
 
 # 2. 读取清洗后的分数分布表 - 使用我们生成的文件
-df_rank = pd.read_csv(DATA_DIR / "2023年考生高考成绩分布表_clean.csv", encoding="utf-8-sig")
+df_rank = pd.read_csv(OUTPUT_DIR / "2023年考生高考成绩分布表_clean.csv", encoding="utf-8-sig")
 
 print(f"数据形状: {df_rank.shape}")
 print(f"列名: {list(df_rank.columns)}")
@@ -88,8 +90,8 @@ plt.xlabel('真实 percentile')
 plt.ylabel('预测 percentile')
 plt.title('2023 年测试集：实际 vs 预测')
 plt.tight_layout()
-plt.savefig(DATA_DIR / "linear_regression_scatter.png", dpi=300)
-plt.show()
+plt.savefig(FIGURE_DIR / "linear_regression_scatter.png", dpi=300)
+plt.close()
 
 residuals = y_te - y_pred
 plt.figure(figsize=(6,4))
@@ -98,8 +100,8 @@ plt.xlabel('真实 – 预测')
 plt.ylabel('样本数')
 plt.title('2023 年测试集：残差分布')
 plt.tight_layout()
-plt.savefig(DATA_DIR / "linear_regression_residuals.png", dpi=300)
-plt.show()
+plt.savefig(FIGURE_DIR / "linear_regression_residuals.png", dpi=300)
+plt.close()
 
 # 7. 额外可视化：预测曲线
 plt.figure(figsize=(10, 6))
@@ -117,8 +119,8 @@ plt.title('线性回归：分数 vs percentile')
 plt.legend()
 plt.grid(True, alpha=0.3)
 plt.tight_layout()
-plt.savefig(DATA_DIR / "linear_regression_curve.png", dpi=300)
-plt.show()
+plt.savefig(FIGURE_DIR / "linear_regression_curve.png", dpi=300)
+plt.close()
 
 
 
@@ -166,8 +168,8 @@ plt.plot([mn, mx], [mn, mx], 'r--')
 plt.xlabel('真实 percentile'); plt.ylabel('预测 percentile')
 plt.title('2022 年测试集：实际 vs 预测')
 plt.tight_layout()
-plt.savefig(DIR / "time_split_scatter.png", dpi=300)
-plt.show()
+plt.savefig(FIGURE_DIR / "time_split_scatter.png", dpi=300)
+plt.close()
 
 residuals = y_te - y_pred
 plt.figure(figsize=(6,4))
@@ -175,8 +177,8 @@ plt.hist(residuals, bins=30, edgecolor='k', alpha=0.7)
 plt.xlabel('真实 – 预测'); plt.ylabel('样本数')
 plt.title('2022 年测试集：残差分布')
 plt.tight_layout()
-plt.savefig(DIR / "time_split_residuals.png", dpi=300)
-plt.show()
+plt.savefig(FIGURE_DIR / "time_split_residuals.png", dpi=300)
+plt.close()
 
 
 
@@ -233,8 +235,8 @@ plt.xlabel('真实 percentile')
 plt.ylabel('预测 percentile')
 plt.title('2022 测试集 实际 vs 预测')
 plt.tight_layout()
-plt.savefig(DIR / "time_split_scatter.png", dpi=300)
-plt.show()
+plt.savefig(FIGURE_DIR / "time_split_scatter.png", dpi=300)
+plt.close()
 
 
 
@@ -246,9 +248,9 @@ import re
 
 # 0. 路径
 BASE_DIR = PROJECT_ROOT
-DATA_DIR = PROJECT_ROOT / "志愿填报辅助系统" / "上海高考录取数据17-23年"
-IN_FILE = DATA_DIR / "2023上海专业分数线_clean.csv"
-OUT_FILE = DATA_DIR / "2023上海专业分数线_with_PredictedMBTI.csv"
+DATA_DIR = DATA_RAW_DIR
+IN_FILE = OUTPUT_DIR / "2023上海专业分数线_clean.csv"
+OUT_FILE = OUTPUT_DIR / "2023上海专业分数线_with_PredictedMBTI.csv"
 
 # 1. 读取数据
 df = pd.read_csv(IN_FILE, encoding="utf-8-sig")
@@ -348,7 +350,7 @@ for mbti, count in mbti_dist.items():
 # 8. 保存未映射专业列表（用于后续完善）
 if len(unmapped_majors) > 0:
     unmapped_df = pd.DataFrame({"未映射专业": unmapped_majors})
-    unmapped_file = DATA_DIR / "未映射MBTI的专业列表.csv"
+    unmapped_file = OUTPUT_DIR / "未映射MBTI的专业列表.csv"
     unmapped_df.to_csv(unmapped_file, index=False, encoding="utf-8-sig")
     print(f"\n📝 未映射专业列表已保存: {unmapped_file}")
 

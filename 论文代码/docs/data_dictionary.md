@@ -41,15 +41,16 @@
   - `累计人数`: 累计人数
   - `百分位`: 百分位排名
 
-### subject_combo_to_mbti.txt
-- **位置**: `data/raw/subject_combo_to_mbti.txt`
-- **格式**: TXT (Tab分隔)
+### subject_combo_to_mbti.csv
+- **位置**: `data/raw/subject_combo_to_mbti.csv`
+- **格式**: CSV (逗号分隔)
 - **行数**: 约 20 行
 - **描述**: 选科组合与MBTI类型对应关系表
 - **列**:
   - `subject_combo`: 选科组合（如 "物化生"）
   - `mbti`: MBTI类型（如 "INTJ"）
   - `count`: 出现次数
+  - `support`: 支持度
 
 ### combined_2023.csv
 - **位置**: `data/raw/combined_2023.csv`
@@ -60,16 +61,16 @@
 - **描述**: 混合粒度汇总表，包含多个来源的数据
 - **⚠️ 注意**: 不能作为核心唯一事实表，需要根据业务需求选择性使用
 
-### 上海高考录取数据17-23年/
-- **位置**: `data/raw/上海高考录取数据17-23年/`
-- **描述**: 2017-2023年上海高考录取历史数据目录
+### 历史数据目录结构
+- **位置**: `data/raw/` 下的子目录
+- **描述**: 2017-2023年上海高考录取历史数据
 - **子目录**:
   - `上海_专业分数线_2017-2023/`: 历年专业分数线
   - `上海_投档线_2017-2023/`: 历年投档线
   - `上海_招生计划_2017-2023/`: 历年招生计划
   - `上海_最新资料_2023/`: 2023年最新资料
   - `上海_其他资料/`: 其他参考资料
-  - `全国通用高考数据/`: 全国通用数据
+  - `全国通用高考数据/`: 全国通用数据（大学排名、专业介绍等）
   - `用到的/`: 实际使用的数据副本
 
 ---
@@ -228,11 +229,14 @@ wc -l data/processed/combo_based_recommendations.csv
 ### 数据完整性检查
 
 ```bash
-# 检查是否有重复文件
-python scripts/check_duplicates.py
+# 运行迁移验证脚本
+python scripts/verify_migration.py
 
-# 检查文件完整性
-python scripts/verify_data_integrity.py
+# 运行完整流水线
+python scripts/run_pipeline.py --stage all
+
+# 列出所有可用阶段
+python scripts/run_pipeline.py --list
 ```
 
 ---

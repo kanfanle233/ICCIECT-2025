@@ -11,6 +11,8 @@ import pandas as pd
 from pathlib import Path
 from typing import List, Tuple
 from sklearn.decomposition import TruncatedSVD
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -60,8 +62,8 @@ def _safe_topk(scores: np.ndarray, k: int) -> Tuple[np.ndarray, np.ndarray]:
 
 # ---------- 3. 数据读取与标准化 ----------
 print("加载清洗数据...")
-df_combo_raw = pd.read_csv(DATA_DIR / "subject_combo_to_mbti_clean.csv", encoding="utf-8-sig")
-df_items = pd.read_csv(DATA_DIR / "2023上海专业分数线_with_PredictedMBTI.csv", encoding="utf-8-sig")
+df_combo_raw = pd.read_csv(OUTPUT_DIR / "subject_combo_to_mbti_clean.csv", encoding="utf-8-sig")
+df_items = pd.read_csv(OUTPUT_DIR / "2023上海专业分数线_with_PredictedMBTI.csv", encoding="utf-8-sig")
 
 combo_col = _pick_col(df_combo_raw, ["combo", "选科组合", "subject_combo"], "选科组合")
 mbti_col = _pick_col(df_combo_raw, ["mbti", "MBTI"], "MBTI")
@@ -266,8 +268,8 @@ out = out.merge(
 )
 out = out[["uid", "combo", "mbti", "rank", "院校名称", "专业名称", "最低分", "批次", "Predicted_MBTI", "est_score"]]
 
-out_main = DATA_DIR / "combo_based_recommendations_sklearn.csv"
-out_bpr = DATA_DIR / "combo_based_recommendations_bpr.csv"
+out_main = OUTPUT_DIR / "combo_based_recommendations_sklearn.csv"
+out_bpr = OUTPUT_DIR / "combo_based_recommendations_bpr.csv"
 out.to_csv(out_main, index=False, encoding="utf-8-sig")
 out.to_csv(out_bpr, index=False, encoding="utf-8-sig")
 print(f"已保存推荐结果: {out_main}")
@@ -288,7 +290,7 @@ cand["mbti_w"] = np.select([cand_exact, cand_prefix], [1.0, 0.5], default=0.0).a
 cand["difficulty"] = cand["批次"].map(batch_difficulty).fillna(3).astype(np.float32) / max_difficulty
 cand["rating"] = (cand["mbti_w"] * (1.0 - cand["difficulty"]) * 4.0 + 1.0).astype(np.float32)
 
-cand_file = DATA_DIR / "recommendation_candidates.csv"
+cand_file = OUTPUT_DIR / "recommendation_candidates.csv"
 cand.to_csv(cand_file, index=False, encoding="utf-8-sig")
 print(f"已保存候选集: {cand_file}")
 
@@ -319,14 +321,14 @@ plt.ylabel("mean_score")
 plt.xticks(rotation=45, ha="right")
 
 plt.tight_layout()
-fig_file = DATA_DIR / "recommendation_analysis_bpr.png"
-legacy_fig = DATA_DIR / "recommendation_analysis_sklearn.png"
+fig_file = FIGURE_DIR / "recommendation_analysis_bpr.png"
+legacy_fig = FIGURE_DIR / "recommendation_analysis_sklearn.png"
 plt.savefig(fig_file, dpi=300)
 plt.savefig(legacy_fig, dpi=300)
 plt.close()
 
-report_file = DATA_DIR / "recommendation_analysis_report_bpr.txt"
-legacy_report = DATA_DIR / "recommendation_analysis_report_sklearn.txt"
+report_file = PROJECT_ROOT / "reports" / "recommendation_analysis_report_bpr.txt"
+legacy_report = PROJECT_ROOT / "reports" / "recommendation_analysis_report_sklearn.txt"
 with open(report_file, "w", encoding="utf-8") as f:
     f.write("=== 推荐系统分析报告 (BPR + MMR) ===\n\n")
     f.write(f"用户数量: {n_users}\n")

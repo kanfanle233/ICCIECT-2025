@@ -6,6 +6,7 @@ Verify migration completeness
 
 import sys
 from pathlib import Path
+import pandas as pd
 
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
@@ -126,27 +127,32 @@ def check_script_updates():
 def check_data_files():
     """Check if core data files exist"""
     print("\n📊 检查数据文件...")
-    
+
     data_files = [
         ("data/processed/2023上海专业分数线_clean.csv", 3524),
         ("data/processed/recommendation_candidates.csv", 70480),
         ("data/processed/combo_based_recommendations.csv", 200),
     ]
-    
+
     all_ok = True
     for file_path, expected_lines in data_files:
         full_path = PROJECT_ROOT / file_path
         if full_path.exists():
-            line_count = len(full_path.read_text().split('\n')) - 1  # Subtract header
-            if line_count == expected_lines:
-                print(f"  ✅ {file_path:50} ({line_count} 行，符合预期)")
-            else:
-                print(f"  ⚠️  {file_path:50} ({line_count} 行，预期 {expected_lines} 行)")
+            try:
+                df = pd.read_csv(full_path, encoding="utf-8-sig")
+                line_count = len(df)
+                if line_count == expected_lines:
+                    print(f"  ✅ {file_path:50} ({line_count} 行，符合预期)")
+                else:
+                    print(f"  ⚠️  {file_path:50} ({line_count} 行，预期 {expected_lines} 行)")
+                    all_ok = False
+            except Exception as e:
+                print(f"  ❌ {file_path:50} (读取失败: {e})")
                 all_ok = False
         else:
             print(f"  ❌ {file_path:50} - 文件缺失")
             all_ok = False
-    
+
     return all_ok
 
 def main():

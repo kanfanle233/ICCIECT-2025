@@ -14,13 +14,12 @@ import sys
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 from gaokao_recommender.paths import *
 
-DATA_DIR = DATA_RAW_DIR
 OUTPUT_DIR = DATA_PROCESSED_DIR
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 DIR = OUTPUT_DIR  # 兼容后续保存路径
 # 1. 路径定义 - 修正为正确的路径
 BASE_DIR = PROJECT_ROOT
-DATA_DIR = PROJECT_ROOT / "志愿填报辅助系统" / "上海高考录取数据17-23年"
+DATA_DIR = DATA_PROCESSED_DIR
 PATH_MAJOR = DATA_DIR / "2023上海专业分数线_clean.csv"
 
 # 2. 读取
@@ -69,7 +68,7 @@ df_major_clean = df_major_clean[[
 ]]
 
 # 7. 保存或输出预览
-OUT = DATA_DIR / "2023上海专业分数线_model_ready.csv"
+OUT = OUTPUT_DIR / "2023上海专业分数线_model_ready.csv"
 df_major_clean.to_csv(OUT, index=False, encoding="utf-8-sig")
 
 print(f"\n✅ 数据处理完成")
@@ -96,20 +95,20 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 import joblib
 
+# 导入统一的设备检测模块
+from gaokao_recommender.device_utils import get_device, optimize_batch_size
+
 print("开始构建优化模型...")
 
-# 自动选择计算设备：优先 CUDA，不可用则回退 CPU
-USE_CUDA = torch.cuda.is_available()
-device = torch.device("cuda" if USE_CUDA else "cpu")
-if USE_CUDA:
-    torch.backends.cudnn.benchmark = True
-    print(f"检测到 CUDA，可用设备: {torch.cuda.get_device_name(0)}")
-else:
-    print("未检测到可用 CUDA，使用 CPU 运行")
+# 自动选择计算设备：CUDA > MPS (Apple Silicon) > CPU
+device, device_type = get_device(verbose=True)
+
+# 优化 batch_size
+BATCH_SIZE = optimize_batch_size(device, default_batch_size=16, verbose=True)
 
 # 0. 路径
 BASE_DIR = PROJECT_ROOT
-DATA_DIR = PROJECT_ROOT / "志愿填报辅助系统" / "上海高考录取数据17-23年"
+DATA_DIR = DATA_PROCESSED_DIR
 PATH_RANK = DATA_DIR / "2023年考生高考成绩分布表_clean.csv"
 PATH_MAJOR = DATA_DIR / "2023上海专业分数线_model_ready.csv"
 
@@ -190,10 +189,10 @@ train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
 test_dataset = TensorDataset(X_test_tensor, y_test_tensor)
 
 train_loader = DataLoader(
-    train_dataset, batch_size=16, shuffle=True, pin_memory=USE_CUDA
+    train_dataset, batch_size=16, shuffle=True, pin_memory=(device_type == "cuda")
 )
 test_loader = DataLoader(
-    test_dataset, batch_size=16, shuffle=False, pin_memory=USE_CUDA
+    test_dataset, batch_size=16, shuffle=False, pin_memory=(device_type == "cuda")
 )
 
 # 7. 构建 LSTM 模型
@@ -222,6 +221,8 @@ print(model)
 # 定义损失函数和优化器
 criterion = nn.MSELoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
+BEST_MODEL_PATH = MODEL_LSTM_RANK_OPT_DIR / "best_model.pth"
+BEST_MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 # 训练函数（带早停）
 def train_with_early_stopping(model, train_loader, test_loader, epochs=200, patience=10):
@@ -235,8 +236,8 @@ def train_with_early_stopping(model, train_loader, test_loader, epochs=200, pati
         model.train()
         train_loss = 0.0
         for batch_x, batch_y in train_loader:
-            batch_x = batch_x.to(device, non_blocking=USE_CUDA)
-            batch_y = batch_y.to(device, non_blocking=USE_CUDA)
+            batch_x = batch_x.to(device, non_blocking=(device_type == "cuda"))
+            batch_y = batch_y.to(device, non_blocking=(device_type == "cuda"))
             optimizer.zero_grad(set_to_none=True)
             outputs = model(batch_x)
             loss = criterion(outputs.squeeze(), batch_y)
@@ -249,8 +250,8 @@ def train_with_early_stopping(model, train_loader, test_loader, epochs=200, pati
         val_loss = 0.0
         with torch.no_grad():
             for batch_x, batch_y in test_loader:
-                batch_x = batch_x.to(device, non_blocking=USE_CUDA)
-                batch_y = batch_y.to(device, non_blocking=USE_CUDA)
+                batch_x = batch_x.to(device, non_blocking=(device_type == "cuda"))
+                batch_y = batch_y.to(device, non_blocking=(device_type == "cuda"))
                 outputs = model(batch_x)
                 loss = criterion(outputs.squeeze(), batch_y)
                 val_loss += loss.item()
@@ -265,7 +266,7 @@ def train_with_early_stopping(model, train_loader, test_loader, epochs=200, pati
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             patience_counter = 0
-            torch.save(model.state_dict(), 'best_model.pth')
+            torch.save(model.state_dict(), BEST_MODEL_PATH)
         else:
             patience_counter += 1
 
@@ -277,7 +278,7 @@ def train_with_early_stopping(model, train_loader, test_loader, epochs=200, pati
             print(f'Epoch [{epoch+1}/{epochs}], Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}')
 
     # 加载最佳模型
-    model.load_state_dict(torch.load('best_model.pth', map_location=device))
+    model.load_state_dict(torch.load(BEST_MODEL_PATH, map_location=device))
     return train_losses, val_losses
 
 # 训练模型
@@ -288,7 +289,7 @@ train_losses, val_losses = train_with_early_stopping(model, train_loader, test_l
 model.eval()
 with torch.no_grad():
     y_pred = model(
-        X_test_tensor.to(device, non_blocking=USE_CUDA)
+        X_test_tensor.to(device, non_blocking=(device_type == "cuda"))
     ).squeeze().cpu().numpy()
 
 mae = mean_absolute_error(y_test, y_pred)
@@ -299,13 +300,13 @@ print(f"Test MAE: {mae:.4f}")
 print(f"R²      : {r2:.4f}")
 
 # 9. 保存模型与 scaler
-MODEL_DIR = DATA_DIR / "lstm_rank_opt"
-MODEL_DIR.mkdir(exist_ok=True)
+MODEL_OUTPUT_DIR = MODEL_LSTM_RANK_OPT_DIR
+MODEL_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-torch.save(model.state_dict(), MODEL_DIR / "lstm_rank_opt.pth")
-joblib.dump(scaler, MODEL_DIR / "scaler_rank_opt.pkl")
+torch.save(model.state_dict(), MODEL_OUTPUT_DIR / "lstm_rank_opt.pth")
+joblib.dump(scaler, MODEL_OUTPUT_DIR / "scaler_rank_opt.pkl")
 
-print(f"✅ 优化后的模型与 scaler 已保存至：{MODEL_DIR}")
+print(f"✅ 优化后的模型与 scaler 已保存至：{MODEL_OUTPUT_DIR}")
 
 
 # ===== From Notebook CELL 52 =====
@@ -422,11 +423,11 @@ print(f"R²      : {r2:.4f}")
 
 # ===== From Notebook CELL 62 =====
 # 9. 保存模型与 scaler
-MODEL_DIR = DIR / "lstm_rank_opt"
-MODEL_DIR.mkdir(exist_ok=True)
-model.save(MODEL_DIR / "lstm_rank_opt.h5")
-pd.to_pickle(scaler, MODEL_DIR / "scaler_rank_opt.pkl")
-print("优化后的模型与 scaler 已保存至：", MODEL_DIR)
+MODEL_OUTPUT_DIR = MODEL_LSTM_RANK_OPT_DIR
+MODEL_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+model.save(MODEL_OUTPUT_DIR / "lstm_rank_opt.h5")
+pd.to_pickle(scaler, MODEL_OUTPUT_DIR / "scaler_rank_opt.pkl")
+print("优化后的模型与 scaler 已保存至：", MODEL_OUTPUT_DIR)
 
 
 
@@ -467,8 +468,6 @@ for train_idx, test_idx in kf.split(X_flat):
 
 print("5-Fold CV MAE:", np.mean(mae_scores), "±", np.std(mae_scores))
 print("5-Fold CV R²:",  np.mean(r2_scores),  "±", np.std(r2_scores))
-
-
 
 
 

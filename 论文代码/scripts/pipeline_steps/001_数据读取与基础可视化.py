@@ -8,6 +8,9 @@ Execution order: keep numeric order 001 -> 010
 
 # ===== From Notebook CELL 1 =====
 import pandas as pd
+import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from pathlib import Path
 import sys
@@ -22,12 +25,12 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # ===== From Notebook CELL 2 =====
 # 正确定义文件路径
-PATH_COMBO_MBTI = DATA_DIR / "subject_combo_to_mbti.txt"
+PATH_COMBO_MBTI = DATA_DIR / "subject_combo_to_mbti.csv"
 PATH_MAJOR = DATA_DIR / "2023上海专业分数线.txt"
 PATH_SCORE_DIST = DATA_DIR / "2023年考生高考成绩分布表（上海市）.txt"
 
 # 读取数据
-df_combo = pd.read_csv(PATH_COMBO_MBTI, sep='\t', encoding='utf-8-sig')
+df_combo = pd.read_csv(PATH_COMBO_MBTI, sep=',', encoding='utf-8-sig')
 df_major = pd.read_csv(PATH_MAJOR, sep='\t', encoding='utf-8-sig')
 df_score = pd.read_csv(PATH_SCORE_DIST, sep='\t', encoding='utf-8-sig')
 
@@ -54,12 +57,20 @@ mbti_pie = df_combo.groupby("MBTI")["人数count"].sum().sort_values(ascending=F
 import matplotlib.pyplot as plt
 from matplotlib import font_manager, rcParams
 
-# 1. 指定黑体字体路径（Windows自带）
-font_path = "C:/Windows/Fonts/simhei.ttf"
-simhei_font = font_manager.FontProperties(fname=font_path)
+# 跨平台中文字体配置
+import platform
+if platform.system() == 'Windows':
+    font_path = "C:/Windows/Fonts/simhei.ttf"
+elif platform.system() == 'Darwin':  # macOS
+    font_path = "/System/Library/Fonts/STHeiti Medium.ttc"
+else:  # Linux
+    font_path = "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc"
 
-# 2. 全局设置字体
-plt.rcParams['font.family'] = simhei_font.get_name()
+try:
+    simhei_font = font_manager.FontProperties(fname=font_path)
+    plt.rcParams['font.family'] = simhei_font.get_name()
+except:
+    plt.rcParams['font.sans-serif'] = ['SimHei', 'Arial Unicode MS', 'DejaVu Sans']
 plt.rcParams['axes.unicode_minus'] = False  # 负号正常显示
 
 
@@ -74,9 +85,9 @@ plt.pie(
 )
 plt.title("2023年上海考生 6选3组合-MBTI类型分布")
 plt.tight_layout()
-OUT_FIG = OUTPUT_DIR / "fig_mbti_pie_2023.png"
+OUT_FIG = FIGURE_DIR / "fig_mbti_pie_2023.png"
 plt.savefig(OUT_FIG, dpi=300)
-plt.show()
+plt.close()
 
 print(f"饼图已保存：{OUT_FIG}")
 
@@ -93,10 +104,20 @@ from matplotlib import font_manager
 import seaborn as sns
 from pathlib import Path
 
-# —— 1. 字体配置（Windows 黑体） ——
-font_path = "C:/Windows/Fonts/simhei.ttf"
-simhei_prop = font_manager.FontProperties(fname=font_path)
-plt.rcParams['font.family']        = simhei_prop.get_name()
+# —— 1. 字体配置（跨平台兼容） ——
+import platform
+if platform.system() == 'Windows':
+    font_path = "C:/Windows/Fonts/simhei.ttf"
+elif platform.system() == 'Darwin':  # macOS
+    font_path = "/System/Library/Fonts/STHeiti Medium.ttc"
+else:  # Linux
+    font_path = "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc"
+
+try:
+    simhei_prop = font_manager.FontProperties(fname=font_path)
+    plt.rcParams['font.family'] = simhei_prop.get_name()
+except:
+    plt.rcParams['font.sans-serif'] = ['SimHei', 'Arial Unicode MS', 'DejaVu Sans']
 plt.rcParams['axes.unicode_minus'] = False  # 负号正常显示
 
 # —— 2. 准备数据 —— 
@@ -107,7 +128,7 @@ sizes  = mbti_pie.values
 total  = sizes.sum()
 
 # —— 3. 输出目录 —— 
-OUT_DIR = OUTPUT_DIR
+OUT_DIR = FIGURE_DIR
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # —— 4. Matplotlib Pastel1 柔和饼图 —— 
@@ -127,7 +148,7 @@ ax1.pie(
 ax1.set_title("2023年上海考生 6选3组合-MBTI类型分布（Pastel1）")
 plt.tight_layout()
 fig1.savefig(OUT_DIR/"mbti_pie_pastel1.png", dpi=300)
-plt.show()
+plt.close()
 
 
 # —— 5. Seaborn “pastel” 调色板饼图 —— 
@@ -145,7 +166,7 @@ ax2.pie(
 ax2.set_title("2023年上海考生 6选3组合-MBTI类型分布（Seaborn Pastel）")
 plt.tight_layout()
 fig2.savefig(OUT_DIR/"mbti_pie_seaborn_pastel.png", dpi=300)
-plt.show()
+plt.close()
 
 
 # —— 6. 水平条形图 —— 
@@ -170,7 +191,7 @@ ax3.set_xlabel("考生人数")
 ax3.set_title("2023年上海考生 6选3组合-MBTI类型分布（水平条形）")
 plt.tight_layout()
 fig3.savefig(OUT_DIR/"mbti_barh_pastel1.png", dpi=300)
-plt.show()
+plt.close()
 
 
 # —— 7. 环形图 (Donut) —— 
@@ -187,7 +208,7 @@ ax4.pie(
 ax4.set_title("2023年上海考生 6选3组合-MBTI类型分布（环形图）")
 plt.tight_layout()
 fig4.savefig(OUT_DIR/"mbti_donut_pastel1.png", dpi=300)
-plt.show()
+plt.close()
 
 
 print("所有图表已保存到：", OUT_DIR.resolve())

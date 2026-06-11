@@ -87,17 +87,27 @@ print(f"✔ 模型和 scaler 已保存到：{MODEL_DIR}")
 # ===== From Notebook CELL 43 =====
 #可视化
 import pandas as pd
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib import font_manager, rcParams
 
 # -------- 中文字体 --------
-# 1. 指定黑体字体路径（Windows自带）
-font_path = "C:/Windows/Fonts/simhei.ttf"
-simhei_font = font_manager.FontProperties(fname=font_path)
+# 跨平台中文字体配置
+import platform
+if platform.system() == 'Windows':
+    font_path = "C:/Windows/Fonts/simhei.ttf"
+elif platform.system() == 'Darwin':  # macOS
+    font_path = "/System/Library/Fonts/STHeiti Medium.ttc"
+else:  # Linux
+    font_path = "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc"
 
-# 2. 全局设置字体
-plt.rcParams['font.family'] = simhei_font.get_name()
+try:
+    simhei_font = font_manager.FontProperties(fname=font_path)
+    plt.rcParams['font.family'] = simhei_font.get_name()
+except:
+    plt.rcParams['font.sans-serif'] = ['SimHei', 'Arial Unicode MS', 'DejaVu Sans']
 plt.rcParams['axes.unicode_minus'] = False  # 负号正常显示
 
 
@@ -113,7 +123,7 @@ plt.title('训练与验证损失曲线')
 plt.legend()
 plt.tight_layout()
 plt.savefig(DIR / "lstm_loss_curve.png", dpi=300)
-plt.show()
+plt.close()
 
 
 
@@ -129,7 +139,7 @@ plt.title('训练与验证 MAE 曲线')
 plt.legend()
 plt.tight_layout()
 plt.savefig(DIR / "lstm_mae_curve.png", dpi=300)
-plt.show()
+plt.close()
 
 
 
@@ -149,7 +159,7 @@ plt.ylabel('预测 percentile')
 plt.title('实际 vs 预测 位次百分比')
 plt.tight_layout()
 plt.savefig(DIR / "lstm_scatter_actual_vs_pred.png", dpi=300)
-plt.show()
+plt.close()
 
 
 
@@ -178,7 +188,7 @@ plt.title('预测残差分布')
 plt.xlabel('实际 - 预测')
 plt.ylabel('样本数')
 plt.tight_layout()
-plt.show()
+plt.close()
 
 # MAPE
 mape = mean_absolute_percentage_error(y_test, y_pred)

@@ -22,6 +22,7 @@
   <img src="https://img.shields.io/badge/Top--N-10-orange" alt="Top-N">
   <img src="https://img.shields.io/badge/Python-3.9+-yellow" alt="Python">
   <img src="https://img.shields.io/badge/PyTorch-2.0+-red" alt="PyTorch">
+  <img src="https://img.shields.io/badge/设备-CUDA%20%7C%20MPS%20%7C%20CPU-brightgreen" alt="设备">
 </p>
 
 ---
@@ -46,20 +47,24 @@
 ### 核心能力
 
 - **多维数据融合**：整合7+数据源，包括录取分数、大学排名和学生偏好
-- **LSTM神经网络**：先进的时间序列建模，用于分数到排名的预测，支持GPU/CPU自动检测
+- **LSTM神经网络**：先进的时间序列建模，用于分数到排名的预测
+- **多设备支持**：自动检测并优化 **CUDA**、**MPS (Apple Silicon GPU)** 和 **CPU**
 - **SVD协同过滤**：通过矩阵分解挖掘潜在的兴趣-专业关联
 - **MBTI人格整合**：将选科选择映射到人格类型，实现更精准匹配
 - **MMR重排序**：使用最大边际相关性(λ=0.85)确保推荐多样性
 - **SHAP可解释性**：提供透明的模型解释，使用Tree SHAP分析
+- **跨平台兼容性**：支持 Windows、macOS 和 Linux 系统
 
 ### 技术栈
 
 - **深度学习**：PyTorch (LSTM, MLP, Transformer)
 - **机器学习**：scikit-learn (SVD, Random Forest, GBDT, XGBoost)
+- **设备优化**：CUDA、MPS (Apple Silicon GPU)、CPU 自动检测
 - **推荐系统**：自定义BPR（贝叶斯个性化排序）优化
 - **可解释性**：SHAP (SHapley Additive exPlanations)
 - **数据处理**：pandas, NumPy
 - **可视化**：matplotlib, seaborn
+- **跨平台支持**：Windows、macOS、Linux
 
 ---
 
@@ -136,15 +141,15 @@
 ├── scripts/
 │   ├── run_pipeline.py                 # 流水线编排器
 │   └── pipeline_steps/
-│       ├── 001_数据读取与可视化.py     # 数据导入
-│       ├── 002_数据清洗与标准化.py     # 数据清洗
-│       ├── 003_探索性分析.py           # 探索性分析
-│       ├── 004_LSTM基线训练评估.py      # LSTM基线
-│       ├── 005_优化版LSTM训练.py        # 优化LSTM
-│       ├── 006_交叉验证.py             # 交叉验证
-│       ├── 007_SVD推荐系统.py          # SVD推荐
-│       ├── 008_可解释性分析.py         # SHAP分析
-│       ├── 009_推荐流水线.py           # 端到端流水线
+│       ├── 001_数据读取与基础可视化.py     # 数据导入
+│       ├── 002_清洗标准化与核心表生成.py     # 数据清洗
+│       ├── 003_探索分析与建模前检查.py           # 探索性分析
+│       ├── 004_LSTM基线训练评估与可视化.py      # LSTM基线
+│       ├── 005_优化版LSTM训练_自动GPU_CPU.py        # 优化LSTM
+│       ├── 006_交叉验证与时序切分评估.py             # 交叉验证
+│       ├── 007_SVD推荐系统_向量化优化.py          # SVD推荐
+│       ├── 008_可解释性分析_自动GPU_CPU.py         # SHAP分析
+│       ├── 009_完整推荐流程与可视化输出.py           # 端到端流水线
 │       └── 010_多模型基准对比.py       # 多模型对比
 ├── data/
 │   ├── raw/                            # 106个原始数据文件
@@ -160,7 +165,8 @@
 │   └── references/                     # 参考文献
 ├── src/
 │   └── gaokao_recommender/
-│       └── paths.py                    # 路径配置
+│       ├── paths.py                    # 路径配置
+│       └── device_utils.py             # 设备检测 (CUDA/MPS/CPU)
 ├── notebooks/                          # Jupyter笔记本
 └── docs/                               # 文档
 ```
@@ -172,7 +178,8 @@
 ### 环境要求
 
 - Python 3.9+
-- CUDA 11.8+ (可选，用于GPU加速)
+- CUDA 11.8+ (可选，用于 NVIDIA GPU 加速)
+- MPS 支持 (用于 Apple Silicon Mac)
 - 8GB+ RAM
 
 ### 安装依赖
@@ -190,6 +197,22 @@ source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install torch torchvision torchaudio
 pip install scikit-learn pandas numpy matplotlib seaborn
 pip install shap xgboost
+```
+
+### 设备支持
+
+系统自动检测并优化您的硬件配置：
+
+```python
+from gaokao_recommender.device_utils import get_device
+
+# 自动设备检测
+device, device_type = get_device(verbose=True)
+
+# 输出示例：
+# ✅ 检测到 CUDA GPU (NVIDIA)
+# ✅ 检测到 MPS (Apple Silicon GPU)
+# ⚠️ 使用 CPU
 ```
 
 ### 运行流水线
@@ -241,8 +264,9 @@ candidates = pd.read_csv(paths.processed / "recommendation_candidates.csv")
 - 输出：模型权重和指标
 
 ### 阶段005：优化LSTM
-- GPU/CPU自动检测
-- 超参数调优
+- **多设备支持**：自动检测 CUDA、MPS (Apple Silicon) 和 CPU
+- 根据设备特性进行超参数优化
+- 自适应 batch size 以充分利用硬件性能
 - 输出：优化后的模型权重
 
 ### 阶段006：交叉验证

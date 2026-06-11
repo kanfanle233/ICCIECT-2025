@@ -22,6 +22,7 @@
   <img src="https://img.shields.io/badge/Top--N-10-orange" alt="Top-N">
   <img src="https://img.shields.io/badge/Python-3.9+-yellow" alt="Python">
   <img src="https://img.shields.io/badge/PyTorch-2.0+-red" alt="PyTorch">
+  <img src="https://img.shields.io/badge/Device-CUDA%20%7C%20MPS%20%7C%20CPU-brightgreen" alt="Device">
 </p>
 
 ---
@@ -46,20 +47,24 @@ This repository presents an intelligent recommendation system for **Shanghai Gao
 ### Core Capabilities
 
 - **Multi-Dimensional Data Fusion**: Integrates 7+ data sources including admission scores, university rankings, and student preferences
-- **LSTM Neural Network**: Advanced time-series modeling for score-to-rank prediction with GPU/CPU auto-detection
+- **LSTM Neural Network**: Advanced time-series modeling for score-to-rank prediction
+- **Multi-Device Support**: Automatic detection and optimization for **CUDA**, **MPS (Apple Silicon)**, and **CPU**
 - **SVD Collaborative Filtering**: Discovers latent interest-major associations through matrix factorization
 - **MBTI Personality Integration**: Maps elective subject choices to personality types for better matching
 - **MMR Reranking**: Ensures recommendation diversity with Maximal Marginal Relevance (λ=0.85)
 - **SHAP Interpretability**: Provides transparent model explanations with Tree SHAP analysis
+- **Cross-Platform Compatibility**: Works seamlessly on Windows, macOS, and Linux
 
 ### Technical Stack
 
 - **Deep Learning**: PyTorch (LSTM, MLP, Transformer)
 - **Machine Learning**: scikit-learn (SVD, Random Forest, GBDT, XGBoost)
+- **Device Optimization**: CUDA, MPS (Apple Silicon GPU), CPU auto-detection
 - **Recommendation**: Custom BPR (Bayesian Personalized Ranking) optimization
 - **Interpretability**: SHAP (SHapley Additive exPlanations)
 - **Data Processing**: pandas, NumPy
 - **Visualization**: matplotlib, seaborn
+- **Cross-Platform**: Windows, macOS, Linux support
 
 ---
 
@@ -136,15 +141,15 @@ This repository presents an intelligent recommendation system for **Shanghai Gao
 ├── scripts/
 │   ├── run_pipeline.py                 # Pipeline orchestrator
 │   └── pipeline_steps/
-│       ├── 001_数据读取与可视化.py     # Data ingestion
-│       ├── 002_数据清洗与标准化.py     # Data cleaning
-│       ├── 003_探索性分析.py           # EDA
-│       ├── 004_LSTM基线训练评估.py      # LSTM baseline
-│       ├── 005_优化版LSTM训练.py        # Optimized LSTM
-│       ├── 006_交叉验证.py             # Cross-validation
-│       ├── 007_SVD推荐系统.py          # SVD recommendation
-│       ├── 008_可解释性分析.py         # SHAP analysis
-│       ├── 009_推荐流水线.py           # End-to-end pipeline
+│       ├── 001_数据读取与基础可视化.py     # Data ingestion
+│       ├── 002_清洗标准化与核心表生成.py     # Data cleaning
+│       ├── 003_探索分析与建模前检查.py           # EDA
+│       ├── 004_LSTM基线训练评估与可视化.py      # LSTM baseline
+│       ├── 005_优化版LSTM训练_自动GPU_CPU.py        # Optimized LSTM
+│       ├── 006_交叉验证与时序切分评估.py             # Cross-validation
+│       ├── 007_SVD推荐系统_向量化优化.py          # SVD recommendation
+│       ├── 008_可解释性分析_自动GPU_CPU.py         # SHAP analysis
+│       ├── 009_完整推荐流程与可视化输出.py           # End-to-end pipeline
 │       └── 010_多模型基准对比.py       # Multi-model benchmark
 ├── data/
 │   ├── raw/                            # 106 raw data files
@@ -160,7 +165,8 @@ This repository presents an intelligent recommendation system for **Shanghai Gao
 │   └── references/                     # Reference papers
 ├── src/
 │   └── gaokao_recommender/
-│       └── paths.py                    # Path configuration
+│       ├── paths.py                    # Path configuration
+│       └── device_utils.py             # Device detection (CUDA/MPS/CPU)
 ├── notebooks/                          # Jupyter notebooks
 └── docs/                               # Documentation
 ```
@@ -172,7 +178,8 @@ This repository presents an intelligent recommendation system for **Shanghai Gao
 ### Prerequisites
 
 - Python 3.9+
-- CUDA 11.8+ (optional, for GPU acceleration)
+- CUDA 11.8+ (optional, for NVIDIA GPU acceleration)
+- MPS support (for Apple Silicon Macs)
 - 8GB+ RAM
 
 ### Installation
@@ -190,6 +197,22 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install torch torchvision torchaudio
 pip install scikit-learn pandas numpy matplotlib seaborn
 pip install shap xgboost
+```
+
+### Device Support
+
+The system automatically detects and optimizes for your hardware:
+
+```python
+from gaokao_recommender.device_utils import get_device
+
+# Automatic device detection
+device, device_type = get_device(verbose=True)
+
+# Output examples:
+# ✅ 检测到 CUDA GPU (NVIDIA)
+# ✅ 检测到 MPS (Apple Silicon GPU)
+# ⚠️ 使用 CPU
 ```
 
 ### Run Pipeline
@@ -241,8 +264,9 @@ candidates = pd.read_csv(paths.processed / "recommendation_candidates.csv")
 - Output: Model weights and metrics
 
 ### Stage 005: Optimized LSTM
-- GPU/CPU auto-detection
-- Hyperparameter tuning
+- **Multi-Device Support**: Automatic detection for CUDA, MPS (Apple Silicon), and CPU
+- Hyperparameter tuning with device-specific optimization
+- Adaptive batch size based on device capabilities
 - Output: Optimized model weights
 
 ### Stage 006: Cross-Validation

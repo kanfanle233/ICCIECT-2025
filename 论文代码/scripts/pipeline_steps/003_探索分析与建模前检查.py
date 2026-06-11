@@ -21,9 +21,9 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 DIR = OUTPUT_DIR  # 兼容后续保存语句
 
 # 统一加载 002 预处理后的结果，避免重复清洗造成口径不一致
-PATH_COMBO_CLEAN = DATA_DIR / "subject_combo_to_mbti_clean.csv"
-PATH_MAJOR_CLEAN = DATA_DIR / "2023上海专业分数线_clean.csv"
-PATH_SCORE_CLEAN = DATA_DIR / "2023年考生高考成绩分布表_clean.csv"
+PATH_COMBO_CLEAN = OUTPUT_DIR / "subject_combo_to_mbti_clean.csv"
+PATH_MAJOR_CLEAN = OUTPUT_DIR / "2023上海专业分数线_clean.csv"
+PATH_SCORE_CLEAN = OUTPUT_DIR / "2023年考生高考成绩分布表_clean.csv"
 
 for required_file in [PATH_COMBO_CLEAN, PATH_MAJOR_CLEAN, PATH_SCORE_CLEAN]:
     if not required_file.exists():
@@ -42,17 +42,27 @@ print(f"分数范围: {df_score['分数'].min()} - {df_score['分数'].max()}")
 
 # ===== From Notebook CELL 24 =====
 import pandas as pd
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib import font_manager, rcParams
 
 # -------- 中文字体 --------
-# 1. 指定黑体字体路径（Windows自带）
-font_path = "C:/Windows/Fonts/simhei.ttf"
-simhei_font = font_manager.FontProperties(fname=font_path)
+# 跨平台中文字体配置
+import platform
+if platform.system() == 'Windows':
+    font_path = "C:/Windows/Fonts/simhei.ttf"
+elif platform.system() == 'Darwin':  # macOS
+    font_path = "/System/Library/Fonts/STHeiti Medium.ttc"
+else:  # Linux
+    font_path = "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc"
 
-# 2. 全局设置字体
-plt.rcParams['font.family'] = simhei_font.get_name()
+try:
+    simhei_font = font_manager.FontProperties(fname=font_path)
+    plt.rcParams['font.family'] = simhei_font.get_name()
+except:
+    plt.rcParams['font.sans-serif'] = ['SimHei', 'Arial Unicode MS', 'DejaVu Sans']
 plt.rcParams['axes.unicode_minus'] = False  # 负号正常显示
 
 
@@ -73,12 +83,12 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 DIR = OUTPUT_DIR  # 兼容后续保存语句
 # 修正后的路径定义
 BASE_DIR = PROJECT_ROOT
-DATA_DIR = PROJECT_ROOT / "志愿填报辅助系统" / "上海高考录取数据17-23年"
+DATA_DIR = DATA_RAW_DIR
 
 # 读取清理后的数据文件
-df_score = pd.read_csv(DATA_DIR / "2023年考生高考成绩分布表_clean.csv", encoding="utf-8-sig")
-df_major = pd.read_csv(DATA_DIR / "2023上海专业分数线_clean.csv", encoding="utf-8-sig")
-df_combo = pd.read_csv(DATA_DIR / "subject_combo_to_mbti_clean.csv", encoding="utf-8-sig")
+df_score = pd.read_csv(OUTPUT_DIR / "2023年考生高考成绩分布表_clean.csv", encoding="utf-8-sig")
+df_major = pd.read_csv(OUTPUT_DIR / "2023上海专业分数线_clean.csv", encoding="utf-8-sig")
+df_combo = pd.read_csv(OUTPUT_DIR / "subject_combo_to_mbti_clean.csv", encoding="utf-8-sig")
 
 # 显示数据形状验证
 print("读取清理数据完成！")
@@ -104,7 +114,7 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 DIR = OUTPUT_DIR  # 兼容后续保存语句
 # 确保已经定义了 DATA_DIR
 BASE_DIR = PROJECT_ROOT
-DATA_DIR = PROJECT_ROOT / "志愿填报辅助系统" / "上海高考录取数据17-23年"
+DATA_DIR = DATA_RAW_DIR
 
 # 分数段分布（折线 + 累计人数）
 plt.figure(figsize=(10,6))
@@ -115,8 +125,8 @@ plt.xlabel('高考分数')
 plt.ylabel('人数')
 plt.legend()
 plt.tight_layout()
-plt.savefig(DATA_DIR / "score_line_2023.png", dpi=300)
-plt.show()
+plt.savefig(FIGURE_DIR / "score_line_2023.png", dpi=300)
+plt.close()
 
 
 
@@ -131,8 +141,8 @@ plt.ylabel('人数', fontsize=12)
 plt.grid(True, alpha=0.3)
 plt.legend(fontsize=11)
 plt.tight_layout()
-plt.savefig(DATA_DIR / "score_line_2023.png", dpi=300, bbox_inches='tight')
-plt.show()
+plt.savefig(FIGURE_DIR / "score_line_2023.png", dpi=300, bbox_inches='tight')
+plt.close()
 
 
 
@@ -144,8 +154,8 @@ plt.title('不同批次专业最低分分布')
 plt.xlabel('批次')
 plt.ylabel('最低分')
 plt.tight_layout()
-plt.savefig(DIR / "major_box_2023.png", dpi=300)  # ← 保存图片
-plt.show()
+plt.savefig(FIGURE_DIR / "major_box_2023.png", dpi=300)  # ← 保存图片
+plt.close()
 
 
 
@@ -190,8 +200,8 @@ plt.xlabel('选科组合')
 plt.ylabel('人数')
 plt.xticks(rotation=45, ha='right')
 plt.tight_layout()
-plt.savefig(DATA_DIR / "combo_mbti_bar_2023.png", dpi=300)
-plt.show()
+plt.savefig(FIGURE_DIR / "combo_mbti_bar_2023.png", dpi=300)
+plt.close()
 
 
 
@@ -212,7 +222,7 @@ import pandas as pd
 
 # 修正路径定义
 BASE_DIR = PROJECT_ROOT
-DATA_DIR = PROJECT_ROOT / "志愿填报辅助系统" / "上海高考录取数据17-23年"
+DATA_DIR = DATA_RAW_DIR
 
 # 先检查有哪些可用的清理数据文件
 print("可用的清理数据文件:")
@@ -252,10 +262,10 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 DIR = OUTPUT_DIR  # 兼容后续保存语句
 # 1. 数据加载
 BASE_DIR = PROJECT_ROOT
-DATA_DIR = PROJECT_ROOT / "志愿填报辅助系统" / "上海高考录取数据17-23年"
+DATA_DIR = DATA_RAW_DIR
 
 # 加载专业分数线数据
-df_major = pd.read_csv(DATA_DIR / "2023上海专业分数线_clean.csv", encoding="utf-8-sig")
+df_major = pd.read_csv(OUTPUT_DIR / "2023上海专业分数线_clean.csv", encoding="utf-8-sig")
 print(f"原始数据形状: {df_major.shape}")
 
 # 2. 选择预测任务
@@ -333,10 +343,10 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 DIR = OUTPUT_DIR  # 兼容后续保存语句
 # 1. 数据加载
 BASE_DIR = PROJECT_ROOT
-DATA_DIR = PROJECT_ROOT / "志愿填报辅助系统" / "上海高考录取数据17-23年"
+DATA_DIR = DATA_RAW_DIR
 
 # 加载成绩分布数据
-df_score = pd.read_csv(DATA_DIR / "2023年考生高考成绩分布表_clean.csv", encoding="utf-8-sig")
+df_score = pd.read_csv(OUTPUT_DIR / "2023年考生高考成绩分布表_clean.csv", encoding="utf-8-sig")
 print(f"成绩分布数据形状: {df_score.shape}")
 
 # 2. 选择预测任务 - 分数预测百分位
@@ -464,7 +474,7 @@ print(f"R² Score: {r2_score(y_test, y_pred):.4f}")
 
 # 7. 保存模型
 BASE_DIR = PROJECT_ROOT
-DATA_DIR = PROJECT_ROOT / "志愿填报辅助系统" / "上海高考录取数据17-23年"
+DATA_DIR = DATA_RAW_DIR
 MODEL_DIR = DATA_DIR / "mlp_rank_model"
 MODEL_DIR.mkdir(exist_ok=True)
 
@@ -482,7 +492,7 @@ plt.ylabel('预测值')
 plt.title('MLP 模型预测 vs 实际值')
 plt.tight_layout()
 plt.savefig(MODEL_DIR / "prediction_scatter.png", dpi=300)
-plt.show()
+plt.close()
 
 # 9. 显示训练历史（如果可用）
 if hasattr(mlp_model, 'loss_curve_'):
@@ -493,7 +503,7 @@ if hasattr(mlp_model, 'loss_curve_'):
     plt.ylabel('损失')
     plt.tight_layout()
     plt.savefig(MODEL_DIR / "training_loss.png", dpi=300)
-    plt.show()
+    plt.close()
 
 
 
